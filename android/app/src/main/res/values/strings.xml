@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">No1Assist</string>
+    <string name="title_activity_main">No1Assist</string>
+    <string name="package_name">com.no1assist.bodytracker</string>
+    <string name="custom_url_scheme">com.no1assist.bodytracker</string>
+</resources>
