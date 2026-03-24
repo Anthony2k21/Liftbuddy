@@ -210,3 +210,12 @@
   cursor: grabbing;
   pointer-events: all;
 }
+
+.assistantWrap {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}

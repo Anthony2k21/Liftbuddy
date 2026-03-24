@@ -26,14 +26,23 @@ const COLORS = {
   rest: new THREE.Color(0xaaaaaa),
 }
 
-function getMuscleGroup(name) {
+const LEVEL_RANK = { rest: 0, low: 1, med: 2, high: 3 }
+
+function getMuscleGroup(name, muscleData) {
   const n = name.toLowerCase()
-  if (n.includes('chest') || n.includes('pectoral'))                                    return 'chest'
-  if (n.includes('shoulder') || n.includes('delt'))                                     return 'shoulders'
-  if (n.includes('abs') || n.includes('core') || n.includes('abdom'))                   return 'abs'
-  if (n.includes('arm') || n.includes('bicep') || n.includes('tricep'))                 return 'arms'
+  if (n.includes('chest') || n.includes('pectoral'))                                          return 'chest'
+  if (n.includes('abs') || n.includes('core') || n.includes('abdom'))                         return 'abs'
+  if (n.includes('arm') || n.includes('bicep') || n.includes('tricep'))                       return 'arms'
+  if (n.includes('back') || n.includes('lat') || n.includes('trap'))                          return 'back'
+  // Combined mesh — pick whichever has higher activity
+  if ((n.includes('leg') || n.includes('quad') || n.includes('hamstring') || n.includes('calf')) &&
+      (n.includes('shoulder') || n.includes('delt'))) {
+    const legsRank     = LEVEL_RANK[muscleData?.legs]      ?? 0
+    const shoulderRank = LEVEL_RANK[muscleData?.shoulders] ?? 0
+    return shoulderRank > legsRank ? 'shoulders' : 'legs'
+  }
   if (n.includes('leg') || n.includes('quad') || n.includes('hamstring') || n.includes('calf')) return 'legs'
-  if (n.includes('back') || n.includes('lat') || n.includes('trap'))                    return 'back'
+  if (n.includes('shoulder') || n.includes('delt'))                                            return 'shoulders'
   return null
 }
 
@@ -78,13 +87,12 @@ useEffect(() => {
   if (!scene) return
   scene.traverse((child) => {
     if (!child.isMesh) return
-    // Store original material once
     if (!originalMaterials.current.has(child.uuid)) {
       originalMaterials.current.set(child.uuid, child.material.clone())
     }
     const original = originalMaterials.current.get(child.uuid)
     child.material = original.clone()
-    const group = getMuscleGroup(child.name)
+    const group = getMuscleGroup(child.name, muscleData)
     if (group && muscleData[group] && muscleData[group] !== 'rest') {
       const color = COLORS[muscleData[group]]
       child.material.color.set(color)
@@ -94,6 +102,7 @@ useEffect(() => {
       child.material.emissive = new THREE.Color(0x000000)
       child.material.emissiveIntensity = 0
     }
+    child.material.needsUpdate = true
   })
 }, [scene, muscleData])
 

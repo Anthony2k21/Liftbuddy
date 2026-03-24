@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { HumanModel } from './components/Humanmodel'
 import { StatsBar } from './components/StatsBar'
@@ -6,6 +6,9 @@ import { WorkoutModal } from './components/WorkoutModal'
 import { FlatBench } from './components/flat_bench'
 import { PullUpBar } from './components/pull_up_bar'
 import { BoxingBag } from './components/boxing_bag'
+import { TabBar } from './components/TabBar'
+import { AiAssistant } from './components/AiAssistant'
+import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
 import './index.css'
@@ -28,9 +31,18 @@ function setsToLevel(count) {
 }
 
 export default function App() {
-  const [muscleData, setMuscleData]   = useState(INITIAL_MUSCLE_DATA)
+  const [muscleData, setMuscleData]   = useState(() => {
+    const saved = localStorage.getItem('muscleData')
+    return saved ? JSON.parse(saved) : INITIAL_MUSCLE_DATA
+  })
   const [sessionData, setSessionData] = useState({})
   const [activeModal, setActiveModal] = useState(null)
+  const { logSession, history }       = useWorkoutHistory()
+
+  useEffect(() => {
+    localStorage.setItem('muscleData', JSON.stringify(muscleData))
+  }, [muscleData])
+  const [activeTab, setActiveTab]     = useState('workout')
   const [autoRotate, setAutoRotate]   = useState(true)
   const [rotY, setRotY]               = useState(0)
   const [rotX, setRotX]               = useState(0)
@@ -51,6 +63,7 @@ export default function App() {
       ...prev,
       [muscleGroup]: setsToLevel(sets.reduce((total, e) => total + parseInt(e.sets, 10), 0))
     }))
+    logSession({ muscleGroup, sets })
   }
 
   const onPointerDown = useCallback((e) => {
@@ -182,20 +195,7 @@ export default function App() {
           ))}
         </div>
 
-        {/* Muscle sidebar buttons
-        <div className={styles.muscleButtons}>
-          {Object.keys(INITIAL_MUSCLE_DATA).map(group => (
-            <button
-              key={group}
-              className={`${styles.muscleBtn} ${
-                muscleData[group] !== 'rest' ? styles.muscleBtnActive : ''
-              }`}
-              onClick={() => setActiveModal(group)}
-            >
-              {group.toUpperCase()}
-            </button>
-          ))}
-        </div> */}
+ 
 
         {autoRotate && (
           <div className={styles.hint}>
@@ -214,6 +214,14 @@ export default function App() {
           onClose={() => setActiveModal(null)}
         />
       )}
+
+      {activeTab === 'assistant' && (
+        <div className={styles.assistantWrap}>
+          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} />
+        </div>
+      )}
+
+      <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
     </div>
   )
