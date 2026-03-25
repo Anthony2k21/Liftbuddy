@@ -15,6 +15,12 @@ export function TabBar({ activeTab, onChange }) {
       >
         AI Assistant
       </button>
+      <button
+        className={`${styles.tab} ${activeTab === 'log' ? styles.active : ''}`}
+        onClick={() => onChange('log')}
+      >
+        Workout Log
+      </button>
     </nav>
   )
 }

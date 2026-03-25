@@ -19,9 +19,13 @@ Rules for the JSON:
 - Only include the <WORKOUT> block when actually logging — not for general questions`
 
 export function AiAssistant({ muscleData, history, onLogWorkout }) {
-  const [messages, setMessages] = useState([
-    { role: 'assistant', text: "What's the plan today?" }
-  ])
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem('aiChatHistory')
+    if (saved) {
+      try { return JSON.parse(saved) } catch {}
+    }
+    return [{ role: 'assistant', text: "What's the plan today?" }]
+  })
   const [input, setInput]     = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef             = useRef()
@@ -30,7 +34,10 @@ export function AiAssistant({ muscleData, history, onLogWorkout }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  async function send() {
+  useEffect(() => {
+    localStorage.setItem('aiChatHistory', JSON.stringify(messages))
+  }, [messages])
+   async function send() {
     const text = input.trim()
     if (!text || loading) return
 

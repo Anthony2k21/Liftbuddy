@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { HumanModel } from './components/Humanmodel'
-import { StatsBar } from './components/StatsBar'
 import { WorkoutModal } from './components/WorkoutModal'
 import { FlatBench } from './components/flat_bench'
 import { PullUpBar } from './components/pull_up_bar'
 import { BoxingBag } from './components/boxing_bag'
 import { TabBar } from './components/TabBar'
 import { AiAssistant } from './components/AiAssistant'
+import { InfoBoard } from './components/InfoBoard'
+import { WorkoutLogBoard } from './components/WorkoutLogBoard'
+import { WorkoutLog } from './components/WorkoutLog'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
@@ -46,7 +48,9 @@ export default function App() {
   const [autoRotate, setAutoRotate]   = useState(true)
   const [rotY, setRotY]               = useState(0)
   const [rotX, setRotX]               = useState(0)
-  const [showArcUI, setShowArcUI]     = useState(false)
+  const [showArcUI, setShowArcUI]           = useState(false)
+  const [showSessionBoard, setShowSessionBoard] = useState(false)
+  const [showWorkoutBoard, setShowWorkoutBoard] = useState(false)
 
   const dragging    = useRef(false)
   const prevPos     = useRef({ x: 0, y: 0 })
@@ -135,6 +139,14 @@ export default function App() {
             rotX={rotX}
             onClickModel={() => setShowArcUI(v => !v)}
           />
+          {showSessionBoard && (
+            <InfoBoard
+              sessionData={sessionData}
+              muscleData={muscleData}
+              onEdit={setActiveModal}
+            />
+          )}
+          {showWorkoutBoard && <WorkoutLogBoard />}
         </Canvas>
 
         <div className={styles.scanlines} />
@@ -197,6 +209,21 @@ export default function App() {
 
  
 
+        <div className={styles.boardToggles}>
+          <button
+            className={`${styles.boardToggleBtn} ${showSessionBoard ? styles.boardToggleActive : ''}`}
+            onClick={e => { e.stopPropagation(); setShowSessionBoard(v => !v) }}
+          >
+            SESSION LOG
+          </button>
+          <button
+            className={`${styles.boardToggleBtn} ${showWorkoutBoard ? styles.boardToggleActive : ''}`}
+            onClick={e => { e.stopPropagation(); setShowWorkoutBoard(v => !v) }}
+          >
+            WORKOUT LOG
+          </button>
+        </div>
+
         {autoRotate && (
           <div className={styles.hint}>
             <div className={styles.hintIcon}>↻</div>
@@ -204,7 +231,7 @@ export default function App() {
           </div>
         )}
 
-        <StatsBar muscleData={muscleData} sessionData={sessionData} />
+
       </div>
 
       {activeModal && (
@@ -218,6 +245,12 @@ export default function App() {
       {activeTab === 'assistant' && (
         <div className={styles.assistantWrap}>
           <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} />
+        </div>
+      )}
+
+      {activeTab === 'log' && (
+        <div className={styles.assistantWrap}>
+          <WorkoutLog onComplete={handleSave} />
         </div>
       )}
 

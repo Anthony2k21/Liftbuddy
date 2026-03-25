@@ -211,6 +211,51 @@
   pointer-events: all;
 }
 
+.boardToggles {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+}
+
+.boardToggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(8, 14, 24, 0.82);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.boardToggleBtn:hover {
+  border-color: rgba(255,255,255,0.2);
+  color: var(--text);
+}
+
+.boardToggleActive {
+  border-color: rgba(0,229,255,0.4);
+  color: var(--accent);
+  background: rgba(0,229,255,0.08);
+}
+
+.toggleDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .assistantWrap {
   position: absolute;
   inset: 0;
