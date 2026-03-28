@@ -105,6 +105,12 @@ export default function App() {
         <span className={styles.weekLabel}>
           Week {weekNum} · {new Date().getFullYear()}
         </span>
+        <button
+          className={styles.resetBtn}
+          onClick={() => { localStorage.clear(); window.location.reload() }}
+        >
+          ↺
+        </button>
       </header>
 
       <div
@@ -152,13 +158,6 @@ export default function App() {
         <div className={styles.scanlines} />
         <div className={styles.gradientTop} />
         <div className={styles.gradientBottom} />
-
-        <button
-          className={styles.resetBtn}
-          onClick={e => { e.stopPropagation(); localStorage.clear(); window.location.reload() }}
-        >
-          ↺
-        </button>
 
         {showArcUI && (
           <div className={styles.arcOverlay}>
