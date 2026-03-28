@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import styles from './AiAssistant.module.css'
 
-const API_KEY = import.meta.env.VITE_AI_API_KEY
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`
+const API_URL = '/api/chat'
 
 const SYSTEM_PROMPT = `You are a personal fitness assistant built into a body tracker app called No1Assist.
 You help users with workout advice, muscle recovery, exercise form, programming, and nutrition.
