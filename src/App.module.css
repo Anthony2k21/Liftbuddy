@@ -211,6 +211,30 @@
   pointer-events: all;
 }
 
+.resetBtn {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 10;
+  background: rgba(8, 14, 24, 0.7);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.resetBtn:hover {
+  border-color: rgba(255,61,113,0.4);
+  color: var(--accent2);
+}
+
 .boardToggles {
   position: absolute;
   bottom: 80px;

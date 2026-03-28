@@ -153,6 +153,13 @@ export default function App() {
         <div className={styles.gradientTop} />
         <div className={styles.gradientBottom} />
 
+        <button
+          className={styles.resetBtn}
+          onClick={e => { e.stopPropagation(); localStorage.clear(); window.location.reload() }}
+        >
+          ↺
+        </button>
+
         {showArcUI && (
           <div className={styles.arcOverlay}>
             {Object.keys(INITIAL_MUSCLE_DATA).map((group, i) => {
