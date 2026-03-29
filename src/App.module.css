@@ -211,6 +211,32 @@
   pointer-events: all;
 }
 
+.musicBtn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.musicBtn:hover {
+  border-color: rgba(0,229,255,0.4);
+  color: var(--accent);
+}
+
+.musicBtnActive {
+  border-color: rgba(0,229,255,0.4);
+  color: var(--accent);
+  box-shadow: 0 0 8px rgba(0,229,255,0.2);
+}
+
 .resetBtn {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.08);

@@ -46,7 +46,7 @@ function getMuscleGroup(name, muscleData) {
   return null
 }
 
-export function HumanModel({ muscleData, autoRotate, rotY, rotX, onClickModel }) {
+export function HumanModel({ muscleData, autoRotate, rotY, onClickModel }) {
   const groupRef    = useRef()
   const glowRef     = useRef()
   const glowTexture  = useMemo(() => createCircleGlowTexture(), [])
@@ -110,7 +110,6 @@ useEffect(() => {
     const t = clock.getElapsedTime()
     if (groupRef.current) {
       groupRef.current.rotation.y = autoRotate ? t * 0.4 : rotY
-      groupRef.current.rotation.x = rotX
     }
     if (glowRef.current) {
       glowRef.current.material.opacity = 0.7 + Math.sin(t * 1.5) * 0.15

@@ -46,16 +46,25 @@ export default function App() {
   }, [muscleData])
   const [activeTab, setActiveTab]     = useState('workout')
   const [autoRotate, setAutoRotate]   = useState(true)
-  const [rotY, setRotY]               = useState(0)
-  const [rotX, setRotX]               = useState(0)
-  const [showArcUI, setShowArcUI]           = useState(false)
+  const [rotY, setRotY] = useState(0)
+  const [showArcUI, setShowArcUI]               = useState(false)
   const [showSessionBoard, setShowSessionBoard] = useState(false)
   const [showWorkoutBoard, setShowWorkoutBoard] = useState(false)
+  const [playing, setPlaying]                   = useState(false)
+  const audioRef                                = useRef(null)
+
+  useEffect(() => {
+    if (!audioRef.current) return
+    if (playing) {
+      audioRef.current.play().catch(() => {})
+    } else {
+      audioRef.current.pause()
+    }
+  }, [playing])
 
   const dragging    = useRef(false)
   const prevPos     = useRef({ x: 0, y: 0 })
   const currentRotY = useRef(0)
-  const currentRotX = useRef(0)
 
   const weekNum = Math.ceil(
     (new Date() - new Date(new Date().getFullYear(), 0, 1)) / 604800000
@@ -96,13 +105,9 @@ export default function App() {
     const x  = e.clientX ?? e.touches?.[0]?.clientX
     const y  = e.clientY ?? e.touches?.[0]?.clientY
     const dx = x - prevPos.current.x
-    const dy = y - prevPos.current.y
     currentRotY.current += dx * 0.008
-    currentRotX.current += dy * 0.005
-    currentRotX.current  = Math.max(-0.5, Math.min(0.5, currentRotX.current))
     prevPos.current = { x, y }
     setRotY(currentRotY.current)
-    setRotX(currentRotX.current)
   }, [])
 
   const onPointerUp = useCallback(() => {
@@ -112,11 +117,19 @@ export default function App() {
   return (
     <div className={styles.app}>
 
+      <audio ref={audioRef} src="/music.mp3" loop />
+
       <header className={styles.header}>
         <h1 className={styles.title}>No1Assist</h1>
         <span className={styles.weekLabel}>
           Week {weekNum} · {new Date().getFullYear()}
         </span>
+        <button
+          className={`${styles.musicBtn} ${playing ? styles.musicBtnActive : ''}`}
+          onClick={() => setPlaying(v => !v)}
+        >
+          {playing ? '▮▮' : '▶'}
+        </button>
         <button
           className={styles.resetBtn}
           onClick={() => { localStorage.clear(); window.location.reload() }}
@@ -154,7 +167,6 @@ export default function App() {
             muscleData={muscleData}
             autoRotate={autoRotate}
             rotY={rotY}
-            rotX={rotX}
             onClickModel={() => setShowArcUI(v => !v)}
           />
           {showSessionBoard && (
