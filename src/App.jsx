@@ -61,6 +61,18 @@ export default function App() {
     (new Date() - new Date(new Date().getFullYear(), 0, 1)) / 604800000
   )
 
+  function handleUpdateBoards(boards) {
+    const withIds = boards.map((b, i) => ({
+      ...b,
+      id: Date.now() + i,
+      open: i === 0,
+      exercises: b.exercises.map((e, j) => ({ ...e, id: j + 1 }))
+    }))
+    localStorage.setItem('workoutBoards', JSON.stringify(withIds))
+    // force WorkoutLog to re-read by triggering a storage event
+    window.dispatchEvent(new Event('storage'))
+  }
+
   function handleSave({ muscleGroup, sets }) {
     setSessionData(prev => ({ ...prev, [muscleGroup]: sets }))
     setMuscleData(prev => ({
@@ -250,7 +262,7 @@ export default function App() {
 
       {activeTab === 'assistant' && (
         <div className={styles.assistantWrap}>
-          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} />
+          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} onUpdateBoards={handleUpdateBoards} />
         </div>
       )}
 

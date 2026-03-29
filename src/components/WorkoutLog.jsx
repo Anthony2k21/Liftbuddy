@@ -57,6 +57,17 @@ const PART_TO_MUSCLE = {
 export function WorkoutLog({ onComplete }) {
   const [boards, setBoards]         = useState(loadBoards)
   const [nextId, setNextId]         = useState(() => Math.max(...loadBoards().map(b => b.id), 4) + 1)
+
+  // When the AI assistant creates a new routine, App.jsx writes it to localStorage
+  // and fires a 'storage' event. This listener picks that up and re-renders the boards.
+  useEffect(() => {
+    function onStorage() {
+      setBoards(loadBoards())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   const [completed, setCompleted] = useState(() => {
     try {
       const saved = localStorage.getItem('completedBoards')

@@ -7,17 +7,35 @@ const SYSTEM_PROMPT = `You are a personal fitness assistant built into a body tr
 You help users with workout advice, muscle recovery, exercise form, programming, and nutrition.
 Keep responses concise and practical. You have access to the user's current session muscle data if provided.
 
-When the user asks to log or add a workout, include a JSON block at the END of your response in this exact format:
-<WORKOUT>{"muscleGroup":"chest","sets":[{"exercise":"Bench Press","sets":"3","reps":"1–3","weight":"80"}]}</WORKOUT>
+When the user asks to log or add a single workout, include a JSON block at the END of your response:
+<WORKOUT>{"muscleGroup":"chest","sets":[{"exercise":"Bench Press","sets":"3","reps":"8–10","weight":"80"}]}</WORKOUT>
 
-Rules for the JSON:
-- muscleGroup must be one of: chest, shoulders, abs, arms, back, legs
-- sets is a string number from "1" to "12"
-- reps must be one of: "1–3","4–6","6–8","8–10","10–12","12–15","15–20" — pick the closest match
-- weight is a string number in kg, empty string if not provided
-- Only include the <WORKOUT> block when actually logging — not for general questions`
+When the user asks for a full routine (e.g. push pull legs, PPL, upper lower, full body split), include a ROUTINE block at the END of your response:
+<ROUTINE>[
+  {"name":"Push","part":"chest","emoji":"💪","color":"#4f6cff","exercises":[
+    {"name":"Bench Press","sets":4,"reps":8,"weight":80,"notes":""},
+    {"name":"Overhead Press","sets":3,"reps":10,"weight":50,"notes":""},
+    {"name":"Tricep Pushdown","sets":3,"reps":12,"weight":25,"notes":""}
+  ]},
+  {"name":"Pull","part":"back","emoji":"🏋️","color":"#ff6bae","exercises":[
+    {"name":"Pull-ups","sets":4,"reps":8,"weight":0,"notes":"bodyweight"},
+    {"name":"Barbell Row","sets":4,"reps":8,"weight":70,"notes":""},
+    {"name":"Hammer Curl","sets":3,"reps":12,"weight":18,"notes":""}
+  ]},
+  {"name":"Legs","part":"quads","emoji":"🦵","color":"#ffd166","exercises":[
+    {"name":"Squat","sets":5,"reps":5,"weight":100,"notes":""},
+    {"name":"Leg Press","sets":4,"reps":12,"weight":160,"notes":""},
+    {"name":"Romanian Deadlift","sets":3,"reps":10,"weight":70,"notes":""}
+  ]}
+]</ROUTINE>
 
-export function AiAssistant({ muscleData, history, onLogWorkout }) {
+Rules:
+- part must be one of: chest, back, shoulders, biceps, triceps, abs, quads, hamstrings, calves, glutes, full
+- color should be a hex color that suits the muscle group
+- Only include one block per response — never both WORKOUT and ROUTINE
+- Only include blocks when the user is explicitly asking to create/set a routine or log a workout`
+
+export function AiAssistant({ muscleData, history, onLogWorkout, onUpdateBoards }) {
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('aiChatHistory')
     if (saved) {
@@ -67,12 +85,22 @@ export function AiAssistant({ muscleData, history, onLogWorkout }) {
       })
       const data = await res.json()
       console.log('Gemini:', res.status, JSON.stringify(data))
-      const raw   = data.candidates?.[0]?.content?.parts?.[0]?.text ?? `Error ${res.status}: ${data.error?.message ?? 'No response.'}`
-      const match = raw.match(/<WORKOUT>([\s\S]*?)<\/WORKOUT>/)
-      if (match && onLogWorkout) {
-        try { onLogWorkout(JSON.parse(match[1])) } catch {}
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? `Error ${res.status}: ${data.error?.message ?? 'No response.'}`
+
+      const workoutMatch = raw.match(/<WORKOUT>([\s\S]*?)<\/WORKOUT>/)
+      if (workoutMatch && onLogWorkout) {
+        try { onLogWorkout(JSON.parse(workoutMatch[1])) } catch {}
       }
-      const reply = raw.replace(/<WORKOUT>[\s\S]*?<\/WORKOUT>/g, '').trim()
+
+      const routineMatch = raw.match(/<ROUTINE>([\s\S]*?)<\/ROUTINE>/)
+      if (routineMatch && onUpdateBoards) {
+        try {
+          const boards = JSON.parse(routineMatch[1])
+          onUpdateBoards(boards)
+        } catch {}
+      }
+
+      const reply = raw.replace(/<WORKOUT>[\s\S]*?<\/WORKOUT>/g, '').replace(/<ROUTINE>[\s\S]*?<\/ROUTINE>/g, '').trim()
       setMessages(prev => [...prev, { role: 'assistant', text: reply }])
     } catch (err) {
       console.error('Gemini error:', err)
