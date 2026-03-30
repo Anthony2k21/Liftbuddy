@@ -23,13 +23,14 @@ const COLORS = {
   high: new THREE.Color(0x39ff14),
   med:  new THREE.Color(0x00e5ff),
   low:  new THREE.Color(0xff3d71),
-  rest: new THREE.Color(0xaaaaaa),
+  rest: new THREE.Color(0x888888),
 }
 
 const LEVEL_RANK = { rest: 0, low: 1, med: 2, high: 3 }
 
 function getMuscleGroup(name, muscleData) {
   const n = name.toLowerCase()
+  if (n === 'underwear' || n === 'backmesh.001') return null
   if (n.includes('chest') || n.includes('pectoral'))                                          return 'chest'
   if (n.includes('abs') || n.includes('core') || n.includes('abdom'))                         return 'abs'
   if (n.includes('arm') || n.includes('bicep') || n.includes('tricep'))                       return 'arms'
@@ -50,8 +51,18 @@ export function HumanModel({ muscleData, autoRotate, rotY, onClickModel }) {
   const groupRef    = useRef()
   const glowRef     = useRef()
   const glowTexture  = useMemo(() => createCircleGlowTexture(), [])
-  const { scene, animations } = useGLTF('/model.glb')
+  const { scene, animations } = useGLTF('/model4.glb')
   const { actions, names }    = useAnimations(animations, groupRef)
+
+  useEffect(() => {
+    if (!scene) return
+    scene.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+    })
+  }, [scene])
 
   // Play a specific animation clip from the GLB
   // Play first available animation
@@ -64,7 +75,7 @@ export function HumanModel({ muscleData, autoRotate, rotY, onClickModel }) {
     // Log so you can see which one is used
     console.log('Available action keys:', keys)
 
-    const action = actions[keys[0]] // or keys[1], keys[2], etc.
+    const action = actions['aerobic-dance_315220']
     if (!action) return
 
     action.reset().setLoop(THREE.LoopRepeat).play()
@@ -92,13 +103,22 @@ useEffect(() => {
     }
     const original = originalMaterials.current.get(child.uuid)
     child.material = original.clone()
+    const n = child.name.toLowerCase()
+    if (n === 'absmesh003' || n === 'absmesh003_1') return
     const group = getMuscleGroup(child.name, muscleData)
     if (group && muscleData[group] && muscleData[group] !== 'rest') {
       const color = COLORS[muscleData[group]]
+      child.material.map = null
       child.material.color.set(color)
-      child.material.emissive = color.clone()
-      child.material.emissiveIntensity = 0.15
+      child.material.roughness = 0.6
+      child.material.metalness = 0.1
+      child.material.emissive = new THREE.Color(0x000000)
+      child.material.emissiveIntensity = 0
     } else {
+      child.material.map = null
+      child.material.color.set(COLORS.rest)
+      child.material.roughness = 0.8
+      child.material.metalness = 0.3
       child.material.emissive = new THREE.Color(0x000000)
       child.material.emissiveIntensity = 0
     }
@@ -118,35 +138,41 @@ useEffect(() => {
 
   return (
     <>
-      <ambientLight intensity={3} />
-      <directionalLight intensity={1.5} position={[2, 4, 3]} castShadow />
-      <directionalLight intensity={0.5} position={[-2, 2, -2]} />
+      <ambientLight intensity={0.4} color={0xffffff} />
+      <directionalLight intensity={2} color={0xffffff} position={[2, 5, 3]} castShadow />
+      <directionalLight intensity={0.8} color={0xffffff} position={[-2, 2, -2]} />
+      <directionalLight intensity={0.6} color={0xffffff} position={[0, -2, -3]} />
+      <pointLight intensity={1.5} color={0xffffff} position={[0, 3, 2]} />
 
       <group
         ref={groupRef}
-        position={[0, -1, -1.5]}
-        scale={70}
-        onClick={onClickModel}
+        position={[0, -1.07, -0.8]}
+        scale={0.7}
       >
         <primitive object={scene} />
+        {/* Invisible click proxy covering the full body */}
+        <mesh position={[0, 1, 0]} onClick={onClickModel}>
+          <capsuleGeometry args={[0.4, 1.5, 4, 8]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
       </group>
 
       {/* Solid floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.07, -1.5]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.07, -1.5]} receiveShadow>
         <planeGeometry args={[10, 10]} />
-        <meshBasicMaterial color={0x0a0f1a} />
+        <meshStandardMaterial color={0x020810} />
       </mesh>
 
-      {/* Subtle grid */}
-      <gridHelper args={[10, 10, 0x0d3d4f, 0x0a2030]} position={[0, -1.065, -1.5]} />
+      {/* Vibrant grid */}
+      <gridHelper args={[10, 20, 0x00e5ff, 0x0a4060]} position={[0, -1.065, -1.5]} />
 
       {/* Circular glow spot under model */}
-      <mesh ref={glowRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.06, -1.5]}>
-        <planeGeometry args={[3, 3]} />
+      <mesh ref={glowRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.06, -0.5]}>
+        <planeGeometry args={[5, 5]} />
         <meshBasicMaterial map={glowTexture} transparent depthWrite={false} />
       </mesh>
     </>
   )
 }
 
-useGLTF.preload('/model.glb')
+useGLTF.preload('/model4.glb')

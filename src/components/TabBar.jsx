@@ -21,6 +21,12 @@ export function TabBar({ activeTab, onChange }) {
       >
         Workout Log
       </button>
+      <button
+        className={`${styles.tab} ${activeTab === 'tracker' ? styles.active : ''}`}
+        onClick={() => onChange('tracker')}
+      >
+        Today
+      </button>
     </nav>
   )
 }

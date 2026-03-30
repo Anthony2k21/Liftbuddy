@@ -96,7 +96,7 @@ export function InfoBoard({ sessionData, muscleData }) {
   }
 
   return (
-    <group position={[0.6, -0.1, -1.2]} rotation={[0, -0.45, 0]}>
+    <group position={[0.35, -0.1, -1.2]} rotation={[0, -0.25, 0]}>
       {/* Board backing */}
       <mesh>
         <planeGeometry args={[BOARD_W, BOARD_H]} />

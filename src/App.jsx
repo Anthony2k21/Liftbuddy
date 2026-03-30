@@ -10,6 +10,7 @@ import { AiAssistant } from './components/AiAssistant'
 import { InfoBoard } from './components/InfoBoard'
 import { WorkoutLogBoard } from './components/WorkoutLogBoard'
 import { WorkoutLog } from './components/WorkoutLog'
+import { DailyTracker } from './components/DailyTracker'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
@@ -184,8 +185,8 @@ export default function App() {
         <div className={styles.gradientBottom} />
 
         {showArcUI && (
-          <div className={styles.arcOverlay}>
-            {Object.keys(INITIAL_MUSCLE_DATA).map((group, i) => {
+          <div className={styles.arcOverlay} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
+            {Object.keys(INITIAL_MUSCLE_DATA).map((group) => {
               // Front muscles arc on the left, other muscles arc on the right
               const leftGroups  = ['shoulders', 'chest', 'abs']
               const rightGroups = ['arms', 'back', 'legs']
@@ -210,8 +211,8 @@ export default function App() {
                   className={`${styles.arcItem} ${styles.muscleBtn}`}
                   style={{
                     left: `calc(50% + ${x}px)`,
-                    top:  `calc(48% + ${y}px)`,
-                    animationDelay: `${i * 60}ms`,
+                    top:  `calc(25% + ${y}px)`,
+                    animationDelay: `0ms`,
                   }}
                   onClick={() => setActiveModal(group)}
                 >
@@ -281,6 +282,12 @@ export default function App() {
       {activeTab === 'log' && (
         <div className={styles.assistantWrap}>
           <WorkoutLog onComplete={handleSave} />
+        </div>
+      )}
+
+      {activeTab === 'tracker' && (
+        <div className={styles.assistantWrap}>
+          <DailyTracker />
         </div>
       )}
 

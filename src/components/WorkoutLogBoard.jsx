@@ -119,7 +119,7 @@ export function WorkoutLogBoard() {
   }
 
   return (
-    <group position={[-0.6, -0.1, -1.2]} rotation={[0, 0.45, 0]}>
+    <group position={[-0.35, -0.1, -1.2]} rotation={[0, 0.25, 0]}>
       <mesh>
         <planeGeometry args={[BOARD_W, BOARD_H]} />
         <meshStandardMaterial color="#06101e" opacity={0.88} transparent />
