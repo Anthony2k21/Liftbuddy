@@ -75,7 +75,7 @@ export function HumanModel({ muscleData, autoRotate, rotY, onClickModel }) {
     // Log so you can see which one is used
     console.log('Available action keys:', keys)
 
-    const action = actions['aerobic-dance_315220']
+    const action = actions['strong-m']
     if (!action) return
 
     action.reset().setLoop(THREE.LoopRepeat).play()
