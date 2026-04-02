@@ -26,6 +26,10 @@ const INITIAL_MUSCLE_DATA = {
   legs:      'rest',
 }
 
+function todayKey() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 function setsToLevel(count) {
   if (count === 0) return 'rest'
   if (count <= 2)  return 'low'
@@ -35,15 +39,17 @@ function setsToLevel(count) {
 
 export default function App() {
   const [muscleData, setMuscleData]   = useState(() => {
-    const saved = localStorage.getItem('muscleData')
-    return saved ? JSON.parse(saved) : INITIAL_MUSCLE_DATA
+    const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
+    return calendar[todayKey()] || INITIAL_MUSCLE_DATA
   })
   const [sessionData, setSessionData] = useState({})
   const [activeModal, setActiveModal] = useState(null)
   const { logSession, history }       = useWorkoutHistory()
 
   useEffect(() => {
-    localStorage.setItem('muscleData', JSON.stringify(muscleData))
+    const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
+    calendar[todayKey()] = muscleData
+    localStorage.setItem('muscleCalendar', JSON.stringify(calendar))
   }, [muscleData])
   const [activeTab, setActiveTab]     = useState('workout')
   const [autoRotate, setAutoRotate]   = useState(true)
@@ -53,6 +59,8 @@ export default function App() {
   const [showWorkoutBoard, setShowWorkoutBoard] = useState(false)
   const [playing, setPlaying]                   = useState(false)
   const audioRef                                = useRef(null)
+  const [animationNames, setAnimationNames]     = useState([])
+  const [activeAnimation, setActiveAnimation]   = useState('strong-m')
 
   useEffect(() => {
     if (!audioRef.current) return
@@ -169,6 +177,8 @@ export default function App() {
             autoRotate={autoRotate}
             rotY={rotY}
             onClickModel={() => setShowArcUI(v => !v)}
+            activeAnimation={activeAnimation}
+            onAnimationsLoaded={setAnimationNames}
           />
           {showSessionBoard && (
             <InfoBoard
@@ -177,7 +187,7 @@ export default function App() {
               onEdit={setActiveModal}
             />
           )}
-          {showWorkoutBoard && <WorkoutLogBoard />}
+          {showWorkoutBoard && <WorkoutLogBoard muscleData={muscleData} />}
         </Canvas>
 
         <div className={styles.scanlines} />
@@ -240,6 +250,21 @@ export default function App() {
 
  
 
+        {animationNames.length > 1 && (
+          <div className={styles.animToggles}>
+            <select
+              className={styles.animSelect}
+              value={activeAnimation}
+              onChange={e => { e.stopPropagation(); setActiveAnimation(e.target.value) }}
+              onClick={e => e.stopPropagation()}
+            >
+              {animationNames.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className={styles.boardToggles}>
           <button
             className={`${styles.boardToggleBtn} ${showSessionBoard ? styles.boardToggleActive : ''}`}
@@ -287,7 +312,10 @@ export default function App() {
 
       {activeTab === 'tracker' && (
         <div className={styles.assistantWrap}>
-          <DailyTracker />
+          <DailyTracker
+            onMuscleUpdate={(part, level) => setMuscleData(prev => ({ ...prev, [part]: level }))}
+            onSessionUpdate={(part, sets) => setSessionData(prev => ({ ...prev, [part]: sets }))}
+          />
         </div>
       )}
 

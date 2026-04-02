@@ -3,6 +3,25 @@ import styles from './DailyTracker.module.css'
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
+const MUSCLE_COLORS = {
+  chest: '#39ff14', shoulders: '#00e5ff', abs: '#ff3d71',
+  arms: '#f5a623', back: '#a259ff', legs: '#ff6b35',
+}
+
+function loadCalendar() {
+  try {
+    return JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
+  } catch { return {} }
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate()
+}
+
+function getFirstDayOfMonth(year, month) {
+  return (new Date(year, month, 1).getDay() + 6) % 7
+}
+
 function loadBoards() {
   try {
     const saved = localStorage.getItem('workoutBoards')
@@ -21,10 +40,25 @@ function saveTracker(data) {
   localStorage.setItem('dailyTracker', JSON.stringify(data))
 }
 
-export function DailyTracker() {
+const PART_TO_MUSCLE = {
+  chest: 'chest', back: 'back', shoulders: 'shoulders',
+  biceps: 'arms', triceps: 'arms', abs: 'abs',
+  quads: 'legs', hamstrings: 'legs', calves: 'legs', glutes: 'legs',
+}
+
+function pctToLevel(pct) {
+  if (pct === 0)   return 'rest'
+  if (pct <= 33)   return 'low'
+  if (pct <= 66)   return 'med'
+  return 'high'
+}
+
+export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
   const [boards, setBoards]   = useState(loadBoards)
   const [tracker, setTracker] = useState(loadTracker)
   const [viewDate, setViewDate] = useState(TODAY)
+  const [calYear, setCalYear]   = useState(new Date().getFullYear())
+  const [calMonth, setCalMonth] = useState(new Date().getMonth())
 
   // Re-read boards if AI updates them
   useEffect(() => {
@@ -38,27 +72,45 @@ export function DailyTracker() {
   }
 
   function toggleDone(boardId, exId) {
-    setTracker(prev => {
-      const next = structuredClone(prev)
-      if (!next[viewDate]) next[viewDate] = {}
-      if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
-      const cur = next[viewDate][boardId][exId] ?? { done: false, weight: '' }
-      next[viewDate][boardId][exId] = { ...cur, done: !cur.done }
-      saveTracker(next)
-      return next
-    })
+    const next = structuredClone(tracker)
+    if (!next[viewDate]) next[viewDate] = {}
+    if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
+    const cur = next[viewDate][boardId][exId] ?? { done: false, weight: '' }
+    next[viewDate][boardId][exId] = { ...cur, done: !cur.done }
+    saveTracker(next)
+    setTracker(next)
+
+    if (viewDate === TODAY) {
+      const board = boards.find(b => b.id === boardId)
+      if (board) {
+        const muscleGroup = PART_TO_MUSCLE[board.part] ?? board.part
+        const total = board.exercises.length
+        const done  = board.exercises.filter(e => next[viewDate][boardId]?.[e.id]?.done).length
+        const pct   = total > 0 ? Math.round(done / total * 100) : 0
+        if (onMuscleUpdate) onMuscleUpdate(muscleGroup, pctToLevel(pct))
+        if (onSessionUpdate) {
+          const sets = board.exercises
+            .filter(e => next[viewDate][boardId]?.[e.id]?.done)
+            .map(e => ({
+              exercise: e.name,
+              sets: e.sets,
+              reps: e.reps,
+              weight: next[viewDate][boardId]?.[e.id]?.weight || ''
+            }))
+          onSessionUpdate(muscleGroup, sets)
+        }
+      }
+    }
   }
 
   function setWeight(boardId, exId, weight) {
-    setTracker(prev => {
-      const next = structuredClone(prev)
-      if (!next[viewDate]) next[viewDate] = {}
-      if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
-      const cur = next[viewDate][boardId][exId] ?? { done: false, weight: '' }
-      next[viewDate][boardId][exId] = { ...cur, weight }
-      saveTracker(next)
-      return next
-    })
+    const next = structuredClone(tracker)
+    if (!next[viewDate]) next[viewDate] = {}
+    if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
+    const cur = next[viewDate][boardId][exId] ?? { done: false, weight: '' }
+    next[viewDate][boardId][exId] = { ...cur, weight }
+    saveTracker(next)
+    setTracker(next)
   }
 
   function boardProgress(b) {
@@ -67,34 +119,74 @@ export function DailyTracker() {
     return { done, total }
   }
 
-  const pastDates = Object.keys(loadTracker())
-    .filter(d => d !== TODAY)
-    .sort((a, b) => b.localeCompare(a))
-    .slice(0, 7)
+
+  // Calendar
+
+  const calendar = loadCalendar()
+  const daysInMonth = getDaysInMonth(calYear, calMonth)
+  const firstDay = getFirstDayOfMonth(calYear, calMonth)
+  const monthLabel = new Date(calYear, calMonth).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+
+  function prevMonth() {
+    if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
+    else setCalMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0) }
+    else setCalMonth(m => m + 1)
+  }
 
   return (
     <div className={styles.wrap}>
       <div className={styles.topbar}>
-        <div>
-          <h1 className={styles.title}>TODAY</h1>
-          <div className={styles.date}>
-            {new Date(viewDate + 'T00:00:00').toLocaleDateString('en-GB', {
-              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-            })}
-          </div>
+        <h1 className={styles.title}>
+          {viewDate === TODAY ? 'TODAY' : new Date(viewDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+        </h1>
+        <div className={styles.date}>
+          {new Date(viewDate + 'T00:00:00').toLocaleDateString('en-GB', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+          })}
         </div>
-        {pastDates.length > 0 && (
-          <select
-            className={styles.datePicker}
-            value={viewDate}
-            onChange={e => setViewDate(e.target.value)}
-          >
-            <option value={TODAY}>Today</option>
-            {pastDates.map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-        )}
+      </div>
+
+      <div className={styles.calendar}>
+        <div className={styles.calNav}>
+          <button className={styles.calNavBtn} onClick={prevMonth}>‹</button>
+          <span className={styles.calMonthLabel}>{monthLabel}</span>
+          <button className={styles.calNavBtn} onClick={nextMonth}>›</button>
+        </div>
+        <div className={styles.calGrid}>
+          {['M','T','W','T','F','S','S'].map((d, i) => (
+            <div key={i} className={styles.calDayName}>{d}</div>
+          ))}
+          {Array.from({ length: firstDay }).map((_, i) => (
+            <div key={`empty-${i}`} />
+          ))}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1
+            const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+            const isToday = dateStr === TODAY
+            const isSelected = dateStr === viewDate
+            const muscles = calendar[dateStr]
+            const trainedMuscles = muscles ? Object.entries(muscles).filter(([, v]) => v !== 'rest') : []
+            return (
+              <button
+                key={dateStr}
+                className={`${styles.calDay} ${isToday ? styles.calToday : ''} ${isSelected ? styles.calSelected : ''}`}
+                onClick={() => setViewDate(dateStr)}
+              >
+                <span className={styles.calDayNum}>{day}</span>
+                {trainedMuscles.length > 0 && (
+                  <div className={styles.calDots}>
+                    {trainedMuscles.slice(0, 3).map(([muscle]) => (
+                      <span key={muscle} className={styles.calDot} style={{ background: MUSCLE_COLORS[muscle] }} />
+                    ))}
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <div className={styles.boards}>

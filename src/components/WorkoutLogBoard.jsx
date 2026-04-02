@@ -1,9 +1,24 @@
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 
-const BORDER_COLOR = '#a56bff'
+const BEBAS = '/fonts/bebas-neue.woff'
+
+const BORDER_COLOR = '#000000'
 const BOARD_W = 0.75
 const BOARD_H = 1.6
+const BAR_W = BOARD_W - 0.1
+const BAR_H = 0.016
+
+const MUSCLE_COLOR = {
+  chest:     '#4f6cff',
+  back:      '#a56bff',
+  shoulders: '#00e5ff',
+  arms:      '#f5a623',
+  abs:       '#ff3d71',
+  legs:      '#39ff14',
+}
+
+const MUSCLE_ORDER = ['chest', 'back', 'shoulders', 'arms', 'abs', 'legs']
 
 function BoardBorder({ w, h }) {
   const shape = new THREE.Shape()
@@ -39,6 +54,7 @@ function BoardBorder({ w, h }) {
   )
 }
 
+
 function loadBoards() {
   try {
     const saved = localStorage.getItem('workoutBoards')
@@ -53,16 +69,21 @@ function loadCompleted() {
   } catch { return new Set() }
 }
 
-export function WorkoutLogBoard() {
+
+const LEVEL_PCT = { rest: 0, low: 0.33, med: 0.66, high: 1.0 }
+const LEVEL_LABEL = { rest: 'REST', low: 'LOW', med: 'MED', high: 'HIGH' }
+
+export function WorkoutLogBoard({ muscleData = {} }) {
   const boards    = loadBoards()
   const completed = loadCompleted()
 
   const rows = []
   let y = BOARD_H / 2 - 0.1
 
+  // Title
   rows.push(
-    <Text key="title" position={[0, y, 0.005]} fontSize={0.038} color={BORDER_COLOR}
-      anchorX="center" anchorY="top" letterSpacing={0.15}>
+    <Text key="title" position={[0, y, 0.005]} fontSize={0.052} color="#ffffff"
+      anchorX="center" anchorY="top" letterSpacing={0.15} font={BEBAS}>
       WORKOUT LOG
     </Text>
   )
@@ -76,6 +97,7 @@ export function WorkoutLogBoard() {
   )
   y -= 0.05
 
+  // Boards list
   if (boards.length === 0) {
     rows.push(
       <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#444444"
@@ -83,6 +105,7 @@ export function WorkoutLogBoard() {
         No boards yet
       </Text>
     )
+    y -= 0.05
   } else {
     for (const b of boards.slice(0, 4)) {
       rows.push(
@@ -91,9 +114,9 @@ export function WorkoutLogBoard() {
           {`${completed.has(b.id) ? '✓' : b.emoji}  ${b.name.toUpperCase()}`}
         </Text>
       )
-      y -= 0.052
+      y -= 0.048
 
-      for (const ex of b.exercises.slice(0, 3)) {
+      for (const ex of b.exercises.slice(0, 2)) {
         const label = `${ex.name}   ${ex.sets}×${ex.reps}${ex.weight ? `   ${ex.weight}kg` : ''}`
         rows.push(
           <Text key={`${b.id}-${ex.id}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
@@ -101,28 +124,88 @@ export function WorkoutLogBoard() {
             {label}
           </Text>
         )
-        y -= 0.038
+        y -= 0.034
       }
 
-      if (b.exercises.length > 3) {
+      if (b.exercises.length > 2) {
         rows.push(
           <Text key={`${b.id}-more`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
             fontSize={0.02} color="#444" anchorX="left" anchorY="top">
-            {`+${b.exercises.length - 3} more`}
+            {`+${b.exercises.length - 2} more`}
           </Text>
         )
-        y -= 0.032
+        y -= 0.028
       }
 
-      y -= 0.018
+      y -= 0.014
     }
+  }
+
+  // Divider before body parts
+  y -= 0.01
+  rows.push(
+    <mesh key="div2" position={[0, y, 0.003]}>
+      <planeGeometry args={[BOARD_W - 0.06, 0.004]} />
+      <meshBasicMaterial color={BORDER_COLOR} opacity={0.15} transparent />
+    </mesh>
+  )
+  y -= 0.03
+
+  rows.push(
+    <Text key="bptitle" position={[0, y, 0.005]} fontSize={0.022} color="#555f70"
+      anchorX="center" anchorY="top" letterSpacing={0.1}>
+      TODAY'S PROGRESS
+    </Text>
+  )
+  y -= 0.036
+
+  // Body part progress bars — driven by muscleData intensity
+  for (const muscle of MUSCLE_ORDER) {
+    const level = muscleData[muscle] ?? 'rest'
+    const pct   = LEVEL_PCT[level] ?? 0
+    const color = MUSCLE_COLOR[muscle]
+    const label = LEVEL_LABEL[level] ?? 'REST'
+
+    rows.push(
+      <Text key={`ml-${muscle}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
+        fontSize={0.021} color={color} anchorX="left" anchorY="middle">
+        {muscle.toUpperCase()}
+      </Text>
+    )
+
+    rows.push(
+      <group key={`mbg-${muscle}`} position={[0.07, y, 0.005]}>
+        <mesh>
+          <planeGeometry args={[BAR_W * 0.62, BAR_H]} />
+          <meshBasicMaterial color="#1a2a3a" />
+        </mesh>
+        {pct > 0 && (
+          <mesh position={[-(BAR_W * 0.62) / 2 + (BAR_W * 0.62 * pct) / 2, 0, 0.001]}>
+            <planeGeometry args={[BAR_W * 0.62 * pct, BAR_H]} />
+            <meshBasicMaterial color={color} opacity={0.85} transparent />
+          </mesh>
+        )}
+        <Text position={[(BAR_W * 0.62) / 2 + 0.03, 0, 0.002]} fontSize={0.016} color={color}
+          anchorX="left" anchorY="middle">
+          {label}
+        </Text>
+      </group>
+    )
+
+    y -= 0.100
   }
 
   return (
     <group position={[-0.35, -0.1, -1.2]} rotation={[0, 0.25, 0]}>
-      <mesh>
-        <planeGeometry args={[BOARD_W, BOARD_H]} />
-        <meshStandardMaterial color="#06101e" opacity={0.88} transparent />
+      {/* Edge rim highlight (behind) */}
+      <mesh position={[0, 0, -0.045]}>
+        <boxGeometry args={[BOARD_W + 0.006, BOARD_H + 0.006, 0.04]} />
+        <meshStandardMaterial color={BORDER_COLOR} opacity={0.15} transparent />
+      </mesh>
+      {/* Board body with thickness */}
+      <mesh position={[0, 0, -0.02]}>
+        <boxGeometry args={[BOARD_W, BOARD_H, 0.04]} />
+        <meshStandardMaterial color="#06101e" opacity={0.92} transparent />
       </mesh>
       <BoardBorder w={BOARD_W} h={BOARD_H} />
       {rows}

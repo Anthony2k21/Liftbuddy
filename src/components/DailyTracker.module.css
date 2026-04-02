@@ -41,6 +41,107 @@
   cursor: pointer;
 }
 
+/* Calendar */
+.calendar {
+  padding: 10px 12px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.calNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calNavBtn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.calNavBtn:hover {
+  border-color: rgba(0,229,255,0.3);
+  color: var(--accent);
+}
+
+.calMonthLabel {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.calDayName {
+  font-size: 9px;
+  color: var(--muted);
+  text-align: center;
+  padding-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.calDay {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 2px 0;
+}
+
+.calDay:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.calToday {
+  border-color: rgba(0,229,255,0.35);
+}
+
+.calSelected {
+  background: rgba(0,229,255,0.1);
+  border-color: rgba(0,229,255,0.5);
+}
+
+.calDayNum {
+  font-size: 10px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.calDots {
+  display: flex;
+  gap: 2px;
+}
+
+.calDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  display: block;
+}
+
 .boards {
   flex: 1;
   overflow-y: auto;
@@ -62,7 +163,6 @@
   background: #0d1422;
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 10px;
-  overflow: hidden;
   transition: border-color 0.2s;
 }
 
@@ -132,6 +232,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
 .exRow {
@@ -216,3 +320,4 @@
   font-size: 10px;
   color: var(--muted);
 }
+

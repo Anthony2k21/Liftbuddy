@@ -1,8 +1,10 @@
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 
+const BEBAS = '/fonts/bebas-neue.woff'
+
 const LEVEL_COLOR = { high: '#39ff14', med: '#00e5ff', low: '#ff3d71', rest: '#555555' }
-const BORDER_COLOR = '#00e5ff'
+const BORDER_COLOR = '#000000'
 const BOARD_W = 0.75
 const BOARD_H = 1.6
 
@@ -48,8 +50,8 @@ export function InfoBoard({ sessionData, muscleData }) {
 
   // Title
   rows.push(
-    <Text key="title" position={[0, y, 0.005]} fontSize={0.038} color={BORDER_COLOR}
-      anchorX="center" anchorY="top" letterSpacing={0.15} font={undefined}>
+    <Text key="title" position={[0, y, 0.005]} fontSize={0.052} color="#ffffff"
+      anchorX="center" anchorY="top" letterSpacing={0.15} font={BEBAS}>
       SESSION LOG
     </Text>
   )
@@ -97,10 +99,15 @@ export function InfoBoard({ sessionData, muscleData }) {
 
   return (
     <group position={[0.35, -0.1, -1.2]} rotation={[0, -0.25, 0]}>
-      {/* Board backing */}
-      <mesh>
-        <planeGeometry args={[BOARD_W, BOARD_H]} />
-        <meshStandardMaterial color="#06101e" opacity={0.88} transparent />
+      {/* Edge rim highlight (behind) */}
+      <mesh position={[0, 0, -0.045]}>
+        <boxGeometry args={[BOARD_W + 0.006, BOARD_H + 0.006, 0.04]} />
+        <meshStandardMaterial color={BORDER_COLOR} opacity={0.15} transparent />
+      </mesh>
+      {/* Board body with thickness */}
+      <mesh position={[0, 0, -0.02]}>
+        <boxGeometry args={[BOARD_W, BOARD_H, 0.04]} />
+        <meshStandardMaterial color="#06101e" opacity={0.92} transparent />
       </mesh>
 
       <BoardBorder w={BOARD_W} h={BOARD_H} />

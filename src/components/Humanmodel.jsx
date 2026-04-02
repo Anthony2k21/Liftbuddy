@@ -23,6 +23,7 @@ const COLORS = {
   high: new THREE.Color(0x39ff14),
   med:  new THREE.Color(0x00e5ff),
   low:  new THREE.Color(0xff3d71),
+
   rest: new THREE.Color(0x888888),
 }
 
@@ -47,11 +48,11 @@ function getMuscleGroup(name, muscleData) {
   return null
 }
 
-export function HumanModel({ muscleData, autoRotate, rotY, onClickModel }) {
+export function HumanModel({ muscleData, autoRotate, rotY, onClickModel, activeAnimation, onAnimationsLoaded }) {
   const groupRef    = useRef()
   const glowRef     = useRef()
   const glowTexture  = useMemo(() => createCircleGlowTexture(), [])
-  const { scene, animations } = useGLTF('/model4.glb')
+  const { scene, animations } = useGLTF('/model.glb')
   const { actions, names }    = useAnimations(animations, groupRef)
 
   useEffect(() => {
@@ -64,18 +65,24 @@ export function HumanModel({ muscleData, autoRotate, rotY, onClickModel }) {
     })
   }, [scene])
 
-  // Play a specific animation clip from the GLB
-  // Play first available animation
+  // Expose animation names to parent once loaded
+  useEffect(() => {
+    if (names && names.length > 0 && onAnimationsLoaded) {
+      onAnimationsLoaded([...new Set(names)])
+    }
+  }, [names, onAnimationsLoaded])
+
+  // Switch animation when activeAnimation changes
   useEffect(() => {
     if (!actions) return
-
     const keys = Object.keys(actions)
     if (keys.length === 0) return
 
-    // Log so you can see which one is used
-    console.log('Available action keys:', keys)
+    // Stop all currently playing actions
+    keys.forEach(k => actions[k]?.stop())
 
-    const action = actions['strong-m']
+    const target = activeAnimation && actions[activeAnimation] ? activeAnimation : keys[0]
+    const action = actions[target]
     if (!action) return
 
     action.reset().setLoop(THREE.LoopRepeat).play()
@@ -83,16 +90,11 @@ export function HumanModel({ muscleData, autoRotate, rotY, onClickModel }) {
     return () => {
       action.stop()
     }
-  }, [actions])
+  }, [actions, activeAnimation])
 
   // Apply muscle colours
   const originalMaterials = useRef(new Map())
 
-  // Log the animation clips and names
-  useEffect(() => {
-    console.log('Animation clips:', animations)
-    console.log('Animation names:', names)
-  }, [animations, names])
 
 useEffect(() => {
   if (!scene) return
@@ -117,8 +119,8 @@ useEffect(() => {
     } else {
       child.material.map = null
       child.material.color.set(COLORS.rest)
-      child.material.roughness = 0.8
-      child.material.metalness = 0.3
+      child.material.roughness = 0.9
+      child.material.metalness = 0.7
       child.material.emissive = new THREE.Color(0x000000)
       child.material.emissiveIntensity = 0
     }
@@ -140,7 +142,7 @@ useEffect(() => {
     <>
       <ambientLight intensity={0.4} color={0xffffff} />
       <directionalLight intensity={2} color={0xffffff} position={[2, 5, 3]} castShadow />
-      <directionalLight intensity={0.8} color={0xffffff} position={[-2, 2, -2]} />
+      {/* <directionalLight intensity={0.8} color={0xffffff} position={[-2, 2, -2]} /> */}
       <directionalLight intensity={0.6} color={0xffffff} position={[0, -2, -3]} />
       <pointLight intensity={1.5} color={0xffffff} position={[0, 3, 2]} />
 
@@ -175,4 +177,4 @@ useEffect(() => {
   )
 }
 
-useGLTF.preload('/model4.glb')
+useGLTF.preload('/model.glb')

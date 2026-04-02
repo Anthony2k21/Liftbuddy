@@ -257,6 +257,30 @@
   color: var(--accent2);
 }
 
+.animToggles {
+  position: absolute;
+  top: 10px;
+  left: 16px;
+  z-index: 5;
+}
+
+.animSelect {
+  background: rgba(8, 14, 24, 0.82);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.animSelect:hover, .animSelect:focus {
+  border-color: rgba(0,229,255,0.4);
+  color: var(--accent);
+}
+
 .boardToggles {
   position: absolute;
   bottom: 80px;
