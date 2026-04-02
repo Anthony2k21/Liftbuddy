@@ -3,8 +3,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg: #060d14;
-  --surface: #0a1520;
+  --bg: #000000;
+  --surface: #0a0a0a;
   --accent: #00e5ff;
   --accent2: #ff3d71;
   --accent3: #39ff14;

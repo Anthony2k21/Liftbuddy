@@ -162,11 +162,11 @@ useEffect(() => {
       {/* Solid floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.07, -1.5]} receiveShadow>
         <planeGeometry args={[10, 10]} />
-        <meshStandardMaterial color={0x020810} />
+        <meshBasicMaterial color={0x000000} />
       </mesh>
 
       {/* Vibrant grid */}
-      <gridHelper args={[10, 20, 0x00e5ff, 0x0a4060]} position={[0, -1.065, -1.5]} />
+      <gridHelper args={[10, 20, 0xffffff, 0x444444]} position={[0, -1.065, -1.5]} />
 
       {/* Circular glow spot under model */}
       <mesh ref={glowRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.06, -0.5]}>

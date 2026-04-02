@@ -100,7 +100,7 @@ export function WorkoutLogBoard({ muscleData = {} }) {
   // Boards list
   if (boards.length === 0) {
     rows.push(
-      <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#444444"
+      <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#ffffff"
         anchorX="center" anchorY="top">
         No boards yet
       </Text>
@@ -110,7 +110,7 @@ export function WorkoutLogBoard({ muscleData = {} }) {
     for (const b of boards.slice(0, 4)) {
       rows.push(
         <Text key={`b-${b.id}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
-          fontSize={0.032} color={b.color} anchorX="left" anchorY="top" letterSpacing={0.06}>
+          fontSize={0.032} color="#ffffff" anchorX="left" anchorY="top" letterSpacing={0.06} font={BEBAS}>
           {`${completed.has(b.id) ? '✓' : b.emoji}  ${b.name.toUpperCase()}`}
         </Text>
       )
@@ -120,7 +120,7 @@ export function WorkoutLogBoard({ muscleData = {} }) {
         const label = `${ex.name}   ${ex.sets}×${ex.reps}${ex.weight ? `   ${ex.weight}kg` : ''}`
         rows.push(
           <Text key={`${b.id}-${ex.id}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-            fontSize={0.022} color="#7a8a98" anchorX="left" anchorY="top" maxWidth={BOARD_W - 0.1}>
+            fontSize={0.022} color="#ffffff" anchorX="left" anchorY="top" maxWidth={BOARD_W - 0.1}>
             {label}
           </Text>
         )
@@ -130,7 +130,7 @@ export function WorkoutLogBoard({ muscleData = {} }) {
       if (b.exercises.length > 2) {
         rows.push(
           <Text key={`${b.id}-more`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-            fontSize={0.02} color="#444" anchorX="left" anchorY="top">
+            fontSize={0.02} color="#ffffff" anchorX="left" anchorY="top">
             {`+${b.exercises.length - 2} more`}
           </Text>
         )
@@ -152,7 +152,7 @@ export function WorkoutLogBoard({ muscleData = {} }) {
   y -= 0.03
 
   rows.push(
-    <Text key="bptitle" position={[0, y, 0.005]} fontSize={0.022} color="#555f70"
+    <Text key="bptitle" position={[0, y, 0.005]} fontSize={0.022} color="#ffffff"
       anchorX="center" anchorY="top" letterSpacing={0.1}>
       TODAY'S PROGRESS
     </Text>
@@ -177,7 +177,7 @@ export function WorkoutLogBoard({ muscleData = {} }) {
       <group key={`mbg-${muscle}`} position={[0.07, y, 0.005]}>
         <mesh>
           <planeGeometry args={[BAR_W * 0.62, BAR_H]} />
-          <meshBasicMaterial color="#1a2a3a" />
+          <meshBasicMaterial color="#111111" />
         </mesh>
         {pct > 0 && (
           <mesh position={[-(BAR_W * 0.62) / 2 + (BAR_W * 0.62 * pct) / 2, 0, 0.001]}>
@@ -205,7 +205,7 @@ export function WorkoutLogBoard({ muscleData = {} }) {
       {/* Board body with thickness */}
       <mesh position={[0, 0, -0.02]}>
         <boxGeometry args={[BOARD_W, BOARD_H, 0.04]} />
-        <meshStandardMaterial color="#06101e" opacity={0.92} transparent />
+        <meshStandardMaterial color="#000000" opacity={0.92} transparent />
       </mesh>
       <BoardBorder w={BOARD_W} h={BOARD_H} />
       {rows}

@@ -3,7 +3,6 @@ import * as THREE from 'three'
 
 const BEBAS = '/fonts/bebas-neue.woff'
 
-const LEVEL_COLOR = { high: '#39ff14', med: '#00e5ff', low: '#ff3d71', rest: '#555555' }
 const BORDER_COLOR = '#000000'
 const BOARD_W = 0.75
 const BOARD_H = 1.6
@@ -42,7 +41,7 @@ function BoardBorder({ w, h }) {
   )
 }
 
-export function InfoBoard({ sessionData, muscleData }) {
+export function InfoBoard({ sessionData }) {
   const logged = Object.entries(sessionData).filter(([, sets]) => sets?.length)
 
   const rows = []
@@ -68,17 +67,16 @@ export function InfoBoard({ sessionData, muscleData }) {
 
   if (logged.length === 0) {
     rows.push(
-      <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#444444"
+      <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#ffffff"
         anchorX="center" anchorY="top">
         No exercises logged
       </Text>
     )
   } else {
     for (const [group, sets] of logged) {
-      const col = LEVEL_COLOR[muscleData[group]] ?? '#aaaaaa'
       rows.push(
         <Text key={`g-${group}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
-          fontSize={0.033} color={col} anchorX="left" anchorY="top" letterSpacing={0.08}>
+          fontSize={0.033} color="#ffffff" anchorX="left" anchorY="top" letterSpacing={0.08} font={BEBAS}>
           {group.toUpperCase()}
         </Text>
       )
@@ -87,7 +85,7 @@ export function InfoBoard({ sessionData, muscleData }) {
         const label = `${s.exercise}   ${s.sets}×${s.reps}${s.weight ? `   ${s.weight}kg` : ''}`
         rows.push(
           <Text key={`${group}-${s.exercise}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-            fontSize={0.024} color="#7a8a98" anchorX="left" anchorY="top" maxWidth={BOARD_W - 0.1}>
+            fontSize={0.024} color="#ffffff" anchorX="left" anchorY="top" maxWidth={BOARD_W - 0.1}>
             {label}
           </Text>
         )
@@ -107,7 +105,7 @@ export function InfoBoard({ sessionData, muscleData }) {
       {/* Board body with thickness */}
       <mesh position={[0, 0, -0.02]}>
         <boxGeometry args={[BOARD_W, BOARD_H, 0.04]} />
-        <meshStandardMaterial color="#06101e" opacity={0.92} transparent />
+        <meshStandardMaterial color="#000000" opacity={0.92} transparent />
       </mesh>
 
       <BoardBorder w={BOARD_W} h={BOARD_H} />
