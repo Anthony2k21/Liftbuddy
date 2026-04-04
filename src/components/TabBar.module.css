@@ -5,9 +5,8 @@
   right: 0;
   display: flex;
   height: 56px;
-  background: rgba(10, 10, 20, 0.92);
-  border-top: 1px solid rgba(0, 255, 200, 0.15);
-  backdrop-filter: blur(12px);
+  background: #000;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 100;
 }
 
@@ -15,7 +14,7 @@
   flex: 1;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.35);
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -25,10 +24,10 @@
 }
 
 .tab:hover {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .tab.active {
-  color: #00ffc8;
-  border-top: 2px solid #00ffc8;
+  color: #fff;
+  border-top: 2px solid #fff;
 }

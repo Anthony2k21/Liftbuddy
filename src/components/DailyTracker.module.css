@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
   background: var(--bg);
 }
 
@@ -39,6 +39,39 @@
   padding: 6px 8px;
   outline: none;
   cursor: pointer;
+}
+
+/* Plan banner */
+.planBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  border-left: 3px solid;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.planBannerName {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.planBannerDay {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.15em;
+}
+
+.planBannerRest {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.5;
 }
 
 /* Calendar */
@@ -130,6 +163,14 @@
   line-height: 1;
 }
 
+.calPlanLabel {
+  font-size: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .calDots {
   display: flex;
   gap: 2px;
@@ -143,8 +184,6 @@
 }
 
 .boards {
-  flex: 1;
-  overflow-y: auto;
   padding: 10px 12px 80px;
   display: flex;
   flex-direction: column;
@@ -232,10 +271,6 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 220px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
 .exRow {

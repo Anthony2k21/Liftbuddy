@@ -69,11 +69,31 @@ function loadCompleted() {
   } catch { return new Set() }
 }
 
+const WORKOUT_DAYS_BY_FREQ = {
+  1: [0], 2: [0,3], 3: [0,2,4], 4: [0,1,3,4],
+  5: [0,1,2,3,4], 6: [0,1,2,3,4,5], 7: [0,1,2,3,4,5,6],
+}
+
+function loadActivePlanDay() {
+  try {
+    const id    = JSON.parse(localStorage.getItem('selectedPlanId'))
+    const plans = JSON.parse(localStorage.getItem('workoutPlans') || '[]')
+    const plan  = plans.find(p => p.id === id)
+    if (!plan || !plan.schedule?.length) return null
+    const dowMon = (new Date().getDay() + 6) % 7
+    const workoutDays = WORKOUT_DAYS_BY_FREQ[plan.daysPerWeek] || []
+    const idx = workoutDays.indexOf(dowMon)
+    if (idx === -1) return { planName: plan.name, color: plan.color, day: null }
+    return { planName: plan.name, color: plan.color, day: plan.schedule[idx % plan.schedule.length] }
+  } catch { return null }
+}
+
 
 const LEVEL_PCT = { rest: 0, low: 0.33, med: 0.66, high: 1.0 }
 const LEVEL_LABEL = { rest: 'REST', low: 'LOW', med: 'MED', high: 'HIGH' }
 
 export function WorkoutLogBoard({ muscleData = {} }) {
+  const planInfo  = loadActivePlanDay()
   const boards    = loadBoards()
   const completed = loadCompleted()
 
@@ -81,13 +101,24 @@ export function WorkoutLogBoard({ muscleData = {} }) {
   let y = BOARD_H / 2 - 0.1
 
   // Title
+  const titleText = planInfo?.day ? planInfo.day.day.toUpperCase() + ' DAY' : 'WORKOUT LOG'
   rows.push(
     <Text key="title" position={[0, y, 0.005]} fontSize={0.052} color="#ffffff"
       anchorX="center" anchorY="top" letterSpacing={0.15} font={BEBAS}>
-      WORKOUT LOG
+      {titleText}
     </Text>
   )
-  y -= 0.07
+  y -= 0.05
+
+  if (planInfo) {
+    rows.push(
+      <Text key="planname" position={[0, y, 0.005]} fontSize={0.022}
+        color={planInfo.color} anchorX="center" anchorY="top" letterSpacing={0.08}>
+        {planInfo.planName.toUpperCase()}
+      </Text>
+    )
+    y -= 0.04
+  }
 
   rows.push(
     <mesh key="div" position={[0, y, 0.003]}>
@@ -97,47 +128,82 @@ export function WorkoutLogBoard({ muscleData = {} }) {
   )
   y -= 0.05
 
-  // Boards list
-  if (boards.length === 0) {
+  // Show active plan day exercises, or fall back to boards
+  if (planInfo && planInfo.day) {
+    for (const ex of planInfo.day.exercises.slice(0, 6)) {
+      rows.push(
+        <Text key={`pex-${ex.name}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
+          fontSize={0.026} color="#ffffff" anchorX="left" anchorY="top"
+          letterSpacing={0.04} maxWidth={BOARD_W - 0.08}>
+          {`${ex.name}`}
+        </Text>
+      )
+      y -= 0.036
+      rows.push(
+        <Text key={`pex-meta-${ex.name}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
+          fontSize={0.020} color={planInfo.color} anchorX="left" anchorY="top">
+          {`${ex.sets} sets × ${ex.reps} reps`}
+        </Text>
+      )
+      y -= 0.032
+    }
+    if (planInfo.day.exercises.length > 6) {
+      rows.push(
+        <Text key="pex-more" position={[-BOARD_W / 2 + 0.07, y, 0.005]}
+          fontSize={0.02} color="#ffffff" anchorX="left" anchorY="top">
+          {`+${planInfo.day.exercises.length - 6} more`}
+        </Text>
+      )
+      y -= 0.028
+    }
+  } else if (planInfo && !planInfo.day) {
     rows.push(
-      <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#ffffff"
-        anchorX="center" anchorY="top">
-        No boards yet
+      <Text key="rest" position={[0, y, 0.005]} fontSize={0.03} color="#ffffff"
+        anchorX="center" anchorY="top" letterSpacing={0.08}>
+        REST DAY
       </Text>
     )
     y -= 0.05
   } else {
-    for (const b of boards.slice(0, 4)) {
+    // No active plan — show boards
+    if (boards.length === 0) {
       rows.push(
-        <Text key={`b-${b.id}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
-          fontSize={0.032} color="#ffffff" anchorX="left" anchorY="top" letterSpacing={0.06} font={BEBAS}>
-          {`${completed.has(b.id) ? '✓' : b.emoji}  ${b.name.toUpperCase()}`}
+        <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#ffffff"
+          anchorX="center" anchorY="top">
+          No boards yet
         </Text>
       )
-      y -= 0.048
-
-      for (const ex of b.exercises.slice(0, 2)) {
-        const label = `${ex.name}   ${ex.sets}×${ex.reps}${ex.weight ? `   ${ex.weight}kg` : ''}`
+      y -= 0.05
+    } else {
+      for (const b of boards.slice(0, 4)) {
         rows.push(
-          <Text key={`${b.id}-${ex.id}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-            fontSize={0.022} color="#ffffff" anchorX="left" anchorY="top" maxWidth={BOARD_W - 0.1}>
-            {label}
+          <Text key={`b-${b.id}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
+            fontSize={0.032} color="#ffffff" anchorX="left" anchorY="top" letterSpacing={0.06} font={BEBAS}>
+            {`${completed.has(b.id) ? '✓' : b.emoji}  ${b.name.toUpperCase()}`}
           </Text>
         )
-        y -= 0.034
+        y -= 0.048
+        for (const ex of b.exercises.slice(0, 2)) {
+          const label = `${ex.name}   ${ex.sets}×${ex.reps}${ex.weight ? `   ${ex.weight}kg` : ''}`
+          rows.push(
+            <Text key={`${b.id}-${ex.id}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
+              fontSize={0.022} color="#ffffff" anchorX="left" anchorY="top" maxWidth={BOARD_W - 0.1}>
+              {label}
+            </Text>
+          )
+          y -= 0.034
+        }
+        if (b.exercises.length > 2) {
+          rows.push(
+            <Text key={`${b.id}-more`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
+              fontSize={0.02} color="#ffffff" anchorX="left" anchorY="top">
+              {`+${b.exercises.length - 2} more`}
+            </Text>
+          )
+          y -= 0.028
+        }
+        y -= 0.014
       }
-
-      if (b.exercises.length > 2) {
-        rows.push(
-          <Text key={`${b.id}-more`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-            fontSize={0.02} color="#ffffff" anchorX="left" anchorY="top">
-            {`+${b.exercises.length - 2} more`}
-          </Text>
-        )
-        y -= 0.028
-      }
-
-      y -= 0.014
     }
   }
 

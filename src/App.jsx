@@ -129,7 +129,10 @@ export default function App() {
       <audio ref={audioRef} src="/music.mp3" loop />
 
       <header className={styles.header}>
-        <h1 className={styles.title}>No1Assist</h1>
+        <div className={styles.titleGroup}>
+          <h1 className={styles.title}>No1Assist</h1>
+          <span className={styles.welcomeText}>Welcome back, Anthony</span>
+        </div>
         <span className={styles.weekLabel}>
           Week {weekNum} · {new Date().getFullYear()}
         </span>

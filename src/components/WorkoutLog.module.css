@@ -115,6 +115,224 @@
   background: rgba(0,229,255,0.15);
 }
 
+/* ── VIEW TABS ── */
+.viewTabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.viewTab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255,255,255,0.35);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.viewTab:hover {
+  color: rgba(255,255,255,0.6);
+}
+
+.viewTabActive {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+/* ── PLAN CARD ── */
+.planCard {
+  background: #0d1422;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.planCard:hover {
+  border-color: rgba(255,255,255,0.1);
+}
+
+.planHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.planColorBar {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 0 2px 2px 0;
+  flex-shrink: 0;
+}
+
+.planTitleWrap {
+  flex: 1;
+}
+
+.planName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+
+.planMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.planTypeBadge {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.planDurBadge, .planDaysBadge {
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.planCheckBtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.planCheckBtn:hover {
+  border-color: rgba(255,255,255,0.35);
+  color: var(--text);
+}
+
+.planCheckBtnActive {
+  background: rgba(255,255,255,0.05);
+}
+
+.planDeleteBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.2);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.planDeleteBtn:hover {
+  color: var(--accent2);
+}
+
+.planBody {
+  border-top: 1px solid rgba(255,255,255,0.04);
+  padding: 12px 14px 14px;
+}
+
+.planDesc {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.planSchedule {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.planEmpty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 10px 0;
+}
+
+.planDay {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.planDayHeader {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+}
+
+.planTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.planTable th {
+  padding: 3px 6px;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 400;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.planExRow {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.planExRow td {
+  padding: 5px 6px;
+  vertical-align: middle;
+}
+
+.planExName {
+  color: var(--text);
+}
+
+.planExVal {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.emptyState {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 40px 20px;
+  line-height: 1.6;
+}
+
 .boardsContainer {
   flex: 1;
   overflow-y: auto;
