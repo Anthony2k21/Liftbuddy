@@ -349,7 +349,7 @@ export default function App() {
 
       {activeTab === 'log' && (
         <div className={styles.assistantWrap}>
-          <WorkoutLog onComplete={handleSave} />
+          <WorkoutLog />
         </div>
       )}
 

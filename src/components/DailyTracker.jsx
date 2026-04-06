@@ -320,11 +320,6 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
 
   const todayPlanDay = getPlanDayForDate(viewDate, activePlan)
 
-  // Collect today's exercise names for the compact progress chart
-  const todayExerciseNames = todayPlanDay
-    ? todayPlanDay.exercises.map(e => e.name)
-    : boards.flatMap(b => b.exercises.map(e => e.name))
-
   return (
     <div className={styles.wrap}>
       <div className={styles.topbar}>
@@ -535,7 +530,7 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
       </div>
 
       <div className={styles.chartSection}>
-        <WeightProgressChart compact filterExercises={todayExerciseNames} />
+        <WeightProgressChart />
       </div>
     </div>
   )
