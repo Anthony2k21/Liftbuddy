@@ -190,7 +190,7 @@ export default function App() {
               onEdit={setActiveModal}
             />
           )}
-          {showWorkoutBoard && <WorkoutLogBoard muscleData={muscleData} />}
+          {showWorkoutBoard && <WorkoutLogBoard />}
         </Canvas>
 
         <div className={styles.scanlines} />

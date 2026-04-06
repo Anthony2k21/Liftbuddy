@@ -1,0 +1,102 @@
+.wrap {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.toggle {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  margin-bottom: 12px;
+}
+.toggle:hover {
+  border-color: rgba(0,229,255,0.4);
+  color: #00e5ff;
+}
+
+.compactHeading {
+  font-size: 0.7rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 10px;
+}
+
+.chartWrap {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 12px 8px 8px 4px;
+}
+
+.exSelect {
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  outline: none;
+}
+.exSelect:focus {
+  border-color: rgba(0,229,255,0.4);
+}
+
+/* Tooltip */
+.tooltip {
+  background: #0a0a0a;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 160px;
+}
+.tooltipDate {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.tooltipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 0.78rem;
+  color: #ffffff;
+}
+.tooltipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tooltipName {
+  flex: 1;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+}
+.tooltipWeight {
+  font-weight: 600;
+  color: #ffffff;
+}
+.deltaUp {
+  color: #39ff14;
+  font-size: 0.7rem;
+}
+.deltaDown {
+  color: #ff3d71;
+  font-size: 0.7rem;
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './DailyTracker.module.css'
+import { WeightProgressChart } from './WeightProgressChart'
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
@@ -182,6 +183,23 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
     next[viewDate][boardId][exId] = { ...cur, weight }
     saveTracker(next)
     setTracker(next)
+
+    // If exercise is already done, re-log session with updated weight
+    if (cur.done && viewDate === TODAY && onSessionUpdate) {
+      const board = boards.find(b => b.id === boardId)
+      if (board) {
+        const muscleGroup = PART_TO_MUSCLE[board.part] ?? board.part
+        const sets = board.exercises
+          .filter(e => next[viewDate][boardId]?.[e.id]?.done)
+          .map(e => ({
+            exercise: e.name,
+            sets: e.sets,
+            reps: e.reps,
+            weight: next[viewDate][boardId]?.[e.id]?.weight || ''
+          }))
+        onSessionUpdate(muscleGroup, sets)
+      }
+    }
   }
 
   function boardProgress(b) {
@@ -208,6 +226,11 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
   }
 
   const todayPlanDay = getPlanDayForDate(viewDate, activePlan)
+
+  // Collect today's exercise names for the compact progress chart
+  const todayExerciseNames = todayPlanDay
+    ? todayPlanDay.exercises.map(e => e.name)
+    : boards.flatMap(b => b.exercises.map(e => e.name))
 
   return (
     <div className={styles.wrap}>
@@ -416,6 +439,10 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
             </div>
           )
         })}
+      </div>
+
+      <div className={styles.chartSection}>
+        <WeightProgressChart compact filterExercises={todayExerciseNames} />
       </div>
     </div>
   )

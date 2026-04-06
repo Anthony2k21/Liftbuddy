@@ -10,6 +10,7 @@ export function useWorkoutHistory() {
     const updated = [...history, { date: new Date().toISOString(), ...entry }]
     setHistory(updated)
     localStorage.setItem('workoutHistory', JSON.stringify(updated))
+    window.dispatchEvent(new Event('workoutHistoryUpdated'))
   }
 
   return { history, logSession }

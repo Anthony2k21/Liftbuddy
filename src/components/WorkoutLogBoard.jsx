@@ -6,19 +6,6 @@ const BEBAS = '/fonts/bebas-neue.woff'
 const BORDER_COLOR = '#000000'
 const BOARD_W = 0.75
 const BOARD_H = 1.6
-const BAR_W = BOARD_W - 0.1
-const BAR_H = 0.016
-
-const MUSCLE_COLOR = {
-  chest:     '#4f6cff',
-  back:      '#a56bff',
-  shoulders: '#00e5ff',
-  arms:      '#f5a623',
-  abs:       '#ff3d71',
-  legs:      '#39ff14',
-}
-
-const MUSCLE_ORDER = ['chest', 'back', 'shoulders', 'arms', 'abs', 'legs']
 
 function BoardBorder({ w, h }) {
   const shape = new THREE.Shape()
@@ -74,6 +61,8 @@ const WORKOUT_DAYS_BY_FREQ = {
   5: [0,1,2,3,4], 6: [0,1,2,3,4,5], 7: [0,1,2,3,4,5,6],
 }
 
+const TODAY = new Date().toISOString().slice(0, 10)
+
 function loadActivePlanDay() {
   try {
     const id    = JSON.parse(localStorage.getItem('selectedPlanId'))
@@ -83,19 +72,31 @@ function loadActivePlanDay() {
     const dowMon = (new Date().getDay() + 6) % 7
     const workoutDays = WORKOUT_DAYS_BY_FREQ[plan.daysPerWeek] || []
     const idx = workoutDays.indexOf(dowMon)
-    if (idx === -1) return { planName: plan.name, color: plan.color, day: null }
-    return { planName: plan.name, color: plan.color, day: plan.schedule[idx % plan.schedule.length] }
+    if (idx === -1) return { planId: plan.id, planName: plan.name, color: plan.color, day: null }
+    return { planId: plan.id, planName: plan.name, color: plan.color, day: plan.schedule[idx % plan.schedule.length] }
   } catch { return null }
 }
 
+function loadTodayPlanProgress(planId, dayName) {
+  try {
+    const tracker = JSON.parse(localStorage.getItem('dailyTracker') || '{}')
+    const boardId = `plan_${planId}_${dayName}`
+    return tracker[TODAY]?.[boardId] || {}
+  } catch { return {} }
+}
 
-const LEVEL_PCT = { rest: 0, low: 0.33, med: 0.66, high: 1.0 }
-const LEVEL_LABEL = { rest: 'REST', low: 'LOW', med: 'MED', high: 'HIGH' }
 
-export function WorkoutLogBoard({ muscleData = {} }) {
+const BAR_W = BOARD_W - 0.1
+const BAR_H = 0.016
+
+export function WorkoutLogBoard() {
   const planInfo  = loadActivePlanDay()
   const boards    = loadBoards()
   const completed = loadCompleted()
+
+  const todayProgress = (planInfo?.day)
+    ? loadTodayPlanProgress(planInfo.planId, planInfo.day.day)
+    : {}
 
   const rows = []
   let y = BOARD_H / 2 - 0.1
@@ -130,28 +131,59 @@ export function WorkoutLogBoard({ muscleData = {} }) {
 
   // Show active plan day exercises, or fall back to boards
   if (planInfo && planInfo.day) {
-    for (const ex of planInfo.day.exercises.slice(0, 6)) {
+    const exercises = planInfo.day.exercises
+    const total = exercises.length
+    const done  = exercises.filter((_, i) => todayProgress[i]?.done).length
+    const pct   = total > 0 ? done / total : 0
+
+    // Progress bar
+    rows.push(
+      <group key="prog-bar" position={[0, y, 0.005]}>
+        <mesh>
+          <planeGeometry args={[BAR_W, BAR_H]} />
+          <meshBasicMaterial color="#111111" />
+        </mesh>
+        {pct > 0 && (
+          <mesh position={[-BAR_W / 2 + (BAR_W * pct) / 2, 0, 0.001]}>
+            <planeGeometry args={[BAR_W * pct, BAR_H]} />
+            <meshBasicMaterial color={planInfo.color} opacity={0.9} transparent />
+          </mesh>
+        )}
+        <Text position={[BAR_W / 2 + 0.03, 0, 0.002]} fontSize={0.016} color={planInfo.color}
+          anchorX="left" anchorY="middle">
+          {`${done}/${total}`}
+        </Text>
+      </group>
+    )
+    y -= 0.036
+
+    for (const [i, ex] of exercises.slice(0, 5).entries()) {
+      const isDone = !!todayProgress[i]?.done
+      const weight = todayProgress[i]?.weight
+      const exColor = isDone ? planInfo.color : '#ffffff'
+
       rows.push(
         <Text key={`pex-${ex.name}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
-          fontSize={0.026} color="#ffffff" anchorX="left" anchorY="top"
-          letterSpacing={0.04} maxWidth={BOARD_W - 0.08}>
-          {`${ex.name}`}
+          fontSize={0.024} color={exColor} anchorX="left" anchorY="top"
+          letterSpacing={0.04} maxWidth={BOARD_W - 0.12}>
+          {`${isDone ? '✓ ' : ''}${ex.name}`}
         </Text>
       )
-      y -= 0.036
+      y -= 0.034
       rows.push(
         <Text key={`pex-meta-${ex.name}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-          fontSize={0.020} color={planInfo.color} anchorX="left" anchorY="top">
-          {`${ex.sets} sets × ${ex.reps} reps`}
+          fontSize={0.019} color={isDone ? planInfo.color : 'rgba(255,255,255,0.45)'}
+          anchorX="left" anchorY="top">
+          {`${ex.sets}×${ex.reps}${weight ? `  ${weight}kg` : ''}`}
         </Text>
       )
-      y -= 0.032
+      y -= 0.030
     }
-    if (planInfo.day.exercises.length > 6) {
+    if (exercises.length > 5) {
       rows.push(
         <Text key="pex-more" position={[-BOARD_W / 2 + 0.07, y, 0.005]}
           fontSize={0.02} color="#ffffff" anchorX="left" anchorY="top">
-          {`+${planInfo.day.exercises.length - 6} more`}
+          {`+${exercises.length - 5} more`}
         </Text>
       )
       y -= 0.028
@@ -207,59 +239,6 @@ export function WorkoutLogBoard({ muscleData = {} }) {
     }
   }
 
-  // Divider before body parts
-  y -= 0.01
-  rows.push(
-    <mesh key="div2" position={[0, y, 0.003]}>
-      <planeGeometry args={[BOARD_W - 0.06, 0.004]} />
-      <meshBasicMaterial color={BORDER_COLOR} opacity={0.15} transparent />
-    </mesh>
-  )
-  y -= 0.03
-
-  rows.push(
-    <Text key="bptitle" position={[0, y, 0.005]} fontSize={0.022} color="#ffffff"
-      anchorX="center" anchorY="top" letterSpacing={0.1}>
-      TODAY'S PROGRESS
-    </Text>
-  )
-  y -= 0.036
-
-  // Body part progress bars — driven by muscleData intensity
-  for (const muscle of MUSCLE_ORDER) {
-    const level = muscleData[muscle] ?? 'rest'
-    const pct   = LEVEL_PCT[level] ?? 0
-    const color = MUSCLE_COLOR[muscle]
-    const label = LEVEL_LABEL[level] ?? 'REST'
-
-    rows.push(
-      <Text key={`ml-${muscle}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
-        fontSize={0.021} color={color} anchorX="left" anchorY="middle">
-        {muscle.toUpperCase()}
-      </Text>
-    )
-
-    rows.push(
-      <group key={`mbg-${muscle}`} position={[0.07, y, 0.005]}>
-        <mesh>
-          <planeGeometry args={[BAR_W * 0.62, BAR_H]} />
-          <meshBasicMaterial color="#111111" />
-        </mesh>
-        {pct > 0 && (
-          <mesh position={[-(BAR_W * 0.62) / 2 + (BAR_W * 0.62 * pct) / 2, 0, 0.001]}>
-            <planeGeometry args={[BAR_W * 0.62 * pct, BAR_H]} />
-            <meshBasicMaterial color={color} opacity={0.85} transparent />
-          </mesh>
-        )}
-        <Text position={[(BAR_W * 0.62) / 2 + 0.03, 0, 0.002]} fontSize={0.016} color={color}
-          anchorX="left" anchorY="middle">
-          {label}
-        </Text>
-      </group>
-    )
-
-    y -= 0.100
-  }
 
   return (
     <group position={[-0.35, -0.1, -1.2]} rotation={[0, 0.25, 0]}>
@@ -275,6 +254,8 @@ export function WorkoutLogBoard({ muscleData = {} }) {
       </mesh>
       <BoardBorder w={BOARD_W} h={BOARD_H} />
       {rows}
+
+
     </group>
   )
 }

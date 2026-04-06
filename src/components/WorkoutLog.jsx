@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './WorkoutLog.module.css'
+import { WeightProgressChart } from './WeightProgressChart'
 
 const ACCENT_COLORS = [
   '#4f6cff','#00e5c8','#a56bff','#ff6bae',
@@ -442,6 +443,7 @@ export function WorkoutLog({ onComplete }) {
         {/* ── BOARDS VIEW ── */}
         {view === 'boards' && (
           <div className={styles.boardsContainer}>
+            <WeightProgressChart />
             {boards.map(b => {
               const vol = boardVol(b)
               const mv  = maxVol(b)
