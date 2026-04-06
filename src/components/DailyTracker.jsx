@@ -77,7 +77,7 @@ const PART_TO_MUSCLE = {
   quads: 'legs', hamstrings: 'legs', calves: 'legs', glutes: 'legs',
 }
 
-// Maps plan day names to human model muscle groups
+// Maps plan day names to muscle group (fallback when exercise name doesn't match)
 const PLAN_DAY_TO_MUSCLE = {
   push:       'chest',
   pull:       'back',
@@ -90,6 +90,85 @@ const PLAN_DAY_TO_MUSCLE = {
   upper:      'chest',
   lower:      'legs',
   cardio:     'legs',
+}
+
+// Maps exercise name keywords → muscle group for per-exercise accuracy
+const EXERCISE_MUSCLE_KEYWORDS = [
+  // Legs first so "deadlift" doesn't get caught by "back" keyword
+  ['squat',              'legs'],
+  ['leg press',          'legs'],
+  ['leg curl',           'legs'],
+  ['leg extension',      'legs'],
+  ['lunge',              'legs'],
+  ['romanian deadlift',  'legs'],
+  ['rdl',                'legs'],
+  ['hip thrust',         'legs'],
+  ['calf raise',         'legs'],
+  ['calf',               'legs'],
+  ['glute',              'legs'],
+  ['sumo deadlift',      'legs'],
+  // Back
+  ['deadlift',           'back'],
+  ['pull-up',            'back'],
+  ['pull up',            'back'],
+  ['pullup',             'back'],
+  ['chin-up',            'back'],
+  ['chin up',            'back'],
+  ['barbell row',        'back'],
+  ['dumbbell row',       'back'],
+  ['cable row',          'back'],
+  ['lat pulldown',       'back'],
+  ['face pull',          'back'],
+  ['shrug',              'back'],
+  ['hyperextension',     'back'],
+  ['good morning',       'back'],
+  // Chest
+  ['bench press',        'chest'],
+  ['chest press',        'chest'],
+  ['chest fly',          'chest'],
+  ['incline press',      'chest'],
+  ['decline press',      'chest'],
+  ['incline dumbbell',   'chest'],
+  ['cable fly',          'chest'],
+  ['pec deck',           'chest'],
+  ['push up',            'chest'],
+  ['pushup',             'chest'],
+  ['dip',                'chest'],
+  // Shoulders
+  ['overhead press',     'shoulders'],
+  ['shoulder press',     'shoulders'],
+  ['ohp',                'shoulders'],
+  ['lateral raise',      'shoulders'],
+  ['front raise',        'shoulders'],
+  ['arnold press',       'shoulders'],
+  ['upright row',        'shoulders'],
+  ['reverse fly',        'shoulders'],
+  // Arms
+  ['curl',               'arms'],
+  ['tricep',             'arms'],
+  ['pushdown',           'arms'],
+  ['skull crusher',      'arms'],
+  ['close grip',         'arms'],
+  ['hammer curl',        'arms'],
+  ['preacher curl',      'arms'],
+  ['overhead extension', 'arms'],
+  // Abs
+  ['crunch',             'abs'],
+  ['plank',              'abs'],
+  ['sit up',             'abs'],
+  ['sit-up',             'abs'],
+  ['leg raise',          'abs'],
+  ['cable crunch',       'abs'],
+  ['russian twist',      'abs'],
+  ['ab wheel',           'abs'],
+]
+
+function getExerciseMuscle(exerciseName, fallback) {
+  const lower = exerciseName.toLowerCase()
+  for (const [keyword, muscle] of EXERCISE_MUSCLE_KEYWORDS) {
+    if (lower.includes(keyword)) return muscle
+  }
+  return fallback ?? 'chest'
 }
 
 function pctToLevel(pct) {
@@ -151,24 +230,38 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
           onSessionUpdate(muscleGroup, sets)
         }
       } else if (activePlan && boardId.startsWith('plan_')) {
-        // Plan day exercise
+        // Plan day exercise — map each exercise to its own muscle group
         const planDay = getPlanDayForDate(viewDate, activePlan)
         if (planDay) {
-          const muscleGroup = PLAN_DAY_TO_MUSCLE[planDay.day.toLowerCase()] ?? 'chest'
-          const total = planDay.exercises.length
-          const done  = planDay.exercises.filter((_, i) => next[viewDate][boardId]?.[i]?.done).length
-          const pct   = total > 0 ? Math.round(done / total * 100) : 0
-          if (onMuscleUpdate) onMuscleUpdate(muscleGroup, pctToLevel(pct))
-          if (onSessionUpdate) {
-            const sets = planDay.exercises
-              .filter((_, i) => next[viewDate][boardId]?.[i]?.done)
-              .map((e, i) => ({
-                exercise: e.name,
-                sets:     e.sets,
-                reps:     String(e.reps),
-                weight:   next[viewDate][boardId]?.[i]?.weight || ''
-              }))
-            onSessionUpdate(muscleGroup, sets)
+          const dayFallback = PLAN_DAY_TO_MUSCLE[planDay.day.toLowerCase()] ?? 'chest'
+
+          // Group exercises by resolved muscle group
+          const byMuscle = {}
+          planDay.exercises.forEach((ex, i) => {
+            const muscle = getExerciseMuscle(ex.name, dayFallback)
+            if (!byMuscle[muscle]) byMuscle[muscle] = { indices: [], exercises: [] }
+            byMuscle[muscle].indices.push(i)
+            byMuscle[muscle].exercises.push(ex)
+          })
+
+          // Update each muscle group independently
+          for (const [muscle, { indices, exercises }] of Object.entries(byMuscle)) {
+            const total = indices.length
+            const done  = indices.filter(i => next[viewDate][boardId]?.[i]?.done).length
+            const pct   = Math.round(done / total * 100)
+            if (onMuscleUpdate) onMuscleUpdate(muscle, pctToLevel(pct))
+            if (onSessionUpdate) {
+              const sets = exercises
+                .map((ex, j) => ({ ex, i: indices[j] }))
+                .filter(({ i }) => next[viewDate][boardId]?.[i]?.done)
+                .map(({ ex, i }) => ({
+                  exercise: ex.name,
+                  sets:     ex.sets,
+                  reps:     String(ex.reps),
+                  weight:   next[viewDate][boardId]?.[i]?.weight || ''
+                }))
+              if (sets.length > 0) onSessionUpdate(muscle, sets)
+            }
           }
         }
       }
