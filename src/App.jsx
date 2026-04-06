@@ -111,7 +111,14 @@ export default function App() {
       exercises: b.exercises.map((e, j) => ({ ...e, id: j + 1 }))
     }))
     localStorage.setItem('workoutBoards', JSON.stringify(withIds))
-    // force WorkoutLog to re-read by triggering a storage event
+    window.dispatchEvent(new Event('storage'))
+  }
+
+  function handleCreatePlan(plan) {
+    const existing = JSON.parse(localStorage.getItem('workoutPlans') || '[]')
+    const newPlan = { ...plan, id: Date.now() }
+    localStorage.setItem('workoutPlans', JSON.stringify([...existing, newPlan]))
+    localStorage.setItem('selectedPlanId', JSON.stringify(newPlan.id))
     window.dispatchEvent(new Event('storage'))
   }
 
@@ -327,7 +334,7 @@ export default function App() {
 
       {activeTab === 'assistant' && (
         <div className={styles.assistantWrap}>
-          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} onUpdateBoards={handleUpdateBoards} />
+          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} onUpdateBoards={handleUpdateBoards} onCreatePlan={handleCreatePlan} />
         </div>
       )}
 
