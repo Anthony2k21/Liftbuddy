@@ -10,7 +10,7 @@ Keep responses concise and practical. You have access to the user's current sess
 When the user asks to log or add a single workout, include a JSON block at the END of your response:
 <WORKOUT>{"muscleGroup":"chest","sets":[{"exercise":"Bench Press","sets":"3","reps":"8–10","weight":"80"}]}</WORKOUT>
 
-When the user asks for a full routine (e.g. push pull legs, PPL, upper lower, full body split), include a ROUTINE block at the END of your response:
+When the user asks for a full routine (e.g. push pull legs, PPL, upper lower, full body split) WITHOUT a specific duration/timeframe, include a ROUTINE block at the END of your response:
 <ROUTINE>[
   {"name":"Push","part":"chest","emoji":"💪","color":"#4f6cff","exercises":[
     {"name":"Bench Press","sets":4,"reps":8,"weight":80,"notes":""},
@@ -29,13 +29,43 @@ When the user asks for a full routine (e.g. push pull legs, PPL, upper lower, fu
   ]}
 ]</ROUTINE>
 
-Rules:
-- part must be one of: chest, back, shoulders, biceps, triceps, abs, quads, hamstrings, calves, glutes, full
-- color should be a hex color that suits the muscle group
-- Only include one block per response — never both WORKOUT and ROUTINE
-- Only include blocks when the user is explicitly asking to create/set a routine or log a workout`
+When the user asks for a structured program lasting multiple weeks (e.g. Stronglifts 5x5, PHUL, a 12-week strength block, a beginner program, any named program with a timeframe), include a PLAN block at the END of your response. This creates a full workout plan linked to the calendar:
+<PLAN>{
+  "name": "Stronglifts 5×5",
+  "type": "Strength",
+  "duration": "12 weeks",
+  "daysPerWeek": 3,
+  "color": "#ffd166",
+  "description": "Linear progression with compound lifts. Add 2.5 kg each session.",
+  "schedule": [
+    {
+      "day": "Workout A",
+      "exercises": [
+        { "name": "Squat",          "sets": 5, "reps": "5", "weight": 60 },
+        { "name": "Bench Press",    "sets": 5, "reps": "5", "weight": 50 },
+        { "name": "Barbell Row",    "sets": 5, "reps": "5", "weight": 40 }
+      ]
+    },
+    {
+      "day": "Workout B",
+      "exercises": [
+        { "name": "Squat",          "sets": 5, "reps": "5", "weight": 60 },
+        { "name": "Overhead Press", "sets": 5, "reps": "5", "weight": 35 },
+        { "name": "Deadlift",       "sets": 1, "reps": "5", "weight": 80 }
+      ]
+    }
+  ]
+}</PLAN>
 
-export function AiAssistant({ muscleData, history, onLogWorkout, onUpdateBoards }) {
+Rules:
+- part (for ROUTINE) must be one of: chest, back, shoulders, biceps, triceps, abs, quads, hamstrings, calves, glutes, full
+- color should be a hex color that suits the program
+- schedule days cycle through the week based on daysPerWeek — name them clearly (e.g. Push/Pull/Legs, Workout A/B, Upper/Lower, Day 1/2/3)
+- Only include ONE block per response — never combine WORKOUT, ROUTINE, and PLAN
+- Use PLAN for anything with a duration/timeframe. Use ROUTINE for simple split boards. Use WORKOUT for single session logging.
+- Only include blocks when the user is explicitly asking to create/set a program, routine, or log a workout`
+
+export function AiAssistant({ muscleData, history, onLogWorkout, onUpdateBoards, onCreatePlan }) {
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('aiChatHistory')
     if (saved) {
@@ -100,7 +130,16 @@ export function AiAssistant({ muscleData, history, onLogWorkout, onUpdateBoards 
         } catch {}
       }
 
-      const reply = raw.replace(/<WORKOUT>[\s\S]*?<\/WORKOUT>/g, '').replace(/<ROUTINE>[\s\S]*?<\/ROUTINE>/g, '').trim()
+      const planMatch = raw.match(/<PLAN>([\s\S]*?)<\/PLAN>/)
+      if (planMatch && onCreatePlan) {
+        try { onCreatePlan(JSON.parse(planMatch[1])) } catch {}
+      }
+
+      const reply = raw
+        .replace(/<WORKOUT>[\s\S]*?<\/WORKOUT>/g, '')
+        .replace(/<ROUTINE>[\s\S]*?<\/ROUTINE>/g, '')
+        .replace(/<PLAN>[\s\S]*?<\/PLAN>/g, '')
+        .trim()
       setMessages(prev => [...prev, { role: 'assistant', text: reply }])
     } catch (err) {
       console.error('Gemini error:', err)

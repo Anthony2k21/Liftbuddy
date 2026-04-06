@@ -60,7 +60,8 @@ export default function App() {
   const [playing, setPlaying]                   = useState(false)
   const audioRef                                = useRef(null)
   const [animationNames, setAnimationNames]     = useState([])
-  const [activeAnimation, setActiveAnimation]   = useState('strong-m')
+  const [activeAnimation, setActiveAnimation]   = useState(null)
+  const animInitialized                         = useRef(false)
 
   useEffect(() => {
     if (!audioRef.current) return
@@ -70,6 +71,29 @@ export default function App() {
       audioRef.current.pause()
     }
   }, [playing])
+
+  // Pick a random animation on load, then cycle every 12 seconds
+  useEffect(() => {
+    if (animationNames.length === 0 || animInitialized.current) return
+    animInitialized.current = true
+
+    const pick = (exclude) => {
+      const pool = exclude
+        ? animationNames.filter(n => n !== exclude)
+        : animationNames
+      return pool.length > 0
+        ? pool[Math.floor(Math.random() * pool.length)]
+        : animationNames[0]
+    }
+
+    setActiveAnimation(pick())
+
+    const interval = setInterval(() => {
+      setActiveAnimation(prev => pick(prev))
+    }, 12000)
+
+    return () => clearInterval(interval)
+  }, [animationNames])
 
   const dragging    = useRef(false)
   const prevPos     = useRef({ x: 0, y: 0 })
@@ -87,7 +111,14 @@ export default function App() {
       exercises: b.exercises.map((e, j) => ({ ...e, id: j + 1 }))
     }))
     localStorage.setItem('workoutBoards', JSON.stringify(withIds))
-    // force WorkoutLog to re-read by triggering a storage event
+    window.dispatchEvent(new Event('storage'))
+  }
+
+  function handleCreatePlan(plan) {
+    const existing = JSON.parse(localStorage.getItem('workoutPlans') || '[]')
+    const newPlan = { ...plan, id: Date.now() }
+    localStorage.setItem('workoutPlans', JSON.stringify([...existing, newPlan]))
+    localStorage.setItem('selectedPlanId', JSON.stringify(newPlan.id))
     window.dispatchEvent(new Event('storage'))
   }
 
@@ -303,7 +334,7 @@ export default function App() {
 
       {activeTab === 'assistant' && (
         <div className={styles.assistantWrap}>
-          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} onUpdateBoards={handleUpdateBoards} />
+          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} onUpdateBoards={handleUpdateBoards} onCreatePlan={handleCreatePlan} />
         </div>
       )}
 
