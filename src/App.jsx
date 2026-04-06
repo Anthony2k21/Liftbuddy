@@ -357,7 +357,10 @@ export default function App() {
         <div className={styles.assistantWrap}>
           <DailyTracker
             onMuscleUpdate={(part, level) => setMuscleData(prev => ({ ...prev, [part]: level }))}
-            onSessionUpdate={(part, sets) => setSessionData(prev => ({ ...prev, [part]: sets }))}
+            onSessionUpdate={(part, sets) => {
+              setSessionData(prev => ({ ...prev, [part]: sets }))
+              logSession({ muscleGroup: part, sets })
+            }}
           />
         </div>
       )}
