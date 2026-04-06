@@ -42,7 +42,12 @@ export default function App() {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
     return calendar[todayKey()] || INITIAL_MUSCLE_DATA
   })
-  const [sessionData, setSessionData] = useState({})
+  const [sessionData, setSessionData] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`sessionData_${todayKey()}`)
+      return saved ? JSON.parse(saved) : {}
+    } catch { return {} }
+  })
   const [activeModal, setActiveModal] = useState(null)
   const { logSession, history }       = useWorkoutHistory()
 
@@ -51,6 +56,10 @@ export default function App() {
     calendar[todayKey()] = muscleData
     localStorage.setItem('muscleCalendar', JSON.stringify(calendar))
   }, [muscleData])
+
+  useEffect(() => {
+    localStorage.setItem(`sessionData_${todayKey()}`, JSON.stringify(sessionData))
+  }, [sessionData])
   const [activeTab, setActiveTab]     = useState('workout')
   const [autoRotate, setAutoRotate]   = useState(true)
   const [rotY, setRotY] = useState(0)
