@@ -174,7 +174,18 @@ export function WeightProgressChart({ compact = false, filterExercises = null })
   const chartData = useMemo(() => buildChartData(filteredData), [filteredData])
   const displayNames = Object.keys(filteredData)
 
-  if (exerciseNames.length === 0) return null
+  if (exerciseNames.length === 0) {
+    if (compact) return null
+    return (
+      <div className={styles.wrap}>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>📈</div>
+          <div className={styles.emptyTitle}>No progress data yet</div>
+          <div className={styles.emptyMsg}>Log workouts with weights and your progress chart will appear here.</div>
+        </div>
+      </div>
+    )
+  }
 
   const height = compact ? 200 : 350
 
