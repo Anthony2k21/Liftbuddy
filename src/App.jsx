@@ -60,7 +60,8 @@ export default function App() {
   const [playing, setPlaying]                   = useState(false)
   const audioRef                                = useRef(null)
   const [animationNames, setAnimationNames]     = useState([])
-  const [activeAnimation, setActiveAnimation]   = useState('strong-m')
+  const [activeAnimation, setActiveAnimation]   = useState(null)
+  const animInitialized                         = useRef(false)
 
   useEffect(() => {
     if (!audioRef.current) return
@@ -70,6 +71,29 @@ export default function App() {
       audioRef.current.pause()
     }
   }, [playing])
+
+  // Pick a random animation on load, then cycle every 12 seconds
+  useEffect(() => {
+    if (animationNames.length === 0 || animInitialized.current) return
+    animInitialized.current = true
+
+    const pick = (exclude) => {
+      const pool = exclude
+        ? animationNames.filter(n => n !== exclude)
+        : animationNames
+      return pool.length > 0
+        ? pool[Math.floor(Math.random() * pool.length)]
+        : animationNames[0]
+    }
+
+    setActiveAnimation(pick())
+
+    const interval = setInterval(() => {
+      setActiveAnimation(prev => pick(prev))
+    }, 12000)
+
+    return () => clearInterval(interval)
+  }, [animationNames])
 
   const dragging    = useRef(false)
   const prevPos     = useRef({ x: 0, y: 0 })
