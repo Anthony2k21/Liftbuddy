@@ -277,20 +277,43 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
     saveTracker(next)
     setTracker(next)
 
-    // If exercise is already done, re-log session with updated weight
-    if (cur.done && viewDate === TODAY && onSessionUpdate) {
-      const board = boards.find(b => b.id === boardId)
-      if (board) {
-        const muscleGroup = PART_TO_MUSCLE[board.part] ?? board.part
-        const sets = board.exercises
-          .filter(e => next[viewDate][boardId]?.[e.id]?.done)
-          .map(e => ({
-            exercise: e.name,
-            sets: e.sets,
-            reps: e.reps,
-            weight: next[viewDate][boardId]?.[e.id]?.weight || ''
+    // If exercise is already ticked, re-emit session so graph updates with new weight
+    if (!cur.done || viewDate !== TODAY || !onSessionUpdate) return
+
+    const board = boards.find(b => b.id === boardId)
+    if (board) {
+      const muscleGroup = PART_TO_MUSCLE[board.part] ?? board.part
+      const sets = board.exercises
+        .filter(e => next[viewDate][boardId]?.[e.id]?.done)
+        .map(e => ({
+          exercise: e.name,
+          sets:     e.sets,
+          reps:     e.reps,
+          weight:   next[viewDate][boardId]?.[e.id]?.weight || ''
+        }))
+      onSessionUpdate(muscleGroup, sets)
+    } else if (activePlan && boardId.startsWith('plan_')) {
+      const planDay = getPlanDayForDate(viewDate, activePlan)
+      if (!planDay) return
+      const dayFallback = PLAN_DAY_TO_MUSCLE[planDay.day.toLowerCase()] ?? 'chest'
+      const byMuscle = {}
+      planDay.exercises.forEach((ex, i) => {
+        const muscle = getExerciseMuscle(ex.name, dayFallback)
+        if (!byMuscle[muscle]) byMuscle[muscle] = { indices: [], exercises: [] }
+        byMuscle[muscle].indices.push(i)
+        byMuscle[muscle].exercises.push(ex)
+      })
+      for (const [muscle, { indices, exercises }] of Object.entries(byMuscle)) {
+        const sets = exercises
+          .map((ex, j) => ({ ex, i: indices[j] }))
+          .filter(({ i }) => next[viewDate][boardId]?.[i]?.done)
+          .map(({ ex, i }) => ({
+            exercise: ex.name,
+            sets:     ex.sets,
+            reps:     String(ex.reps),
+            weight:   next[viewDate][boardId]?.[i]?.weight || ''
           }))
-        onSessionUpdate(muscleGroup, sets)
+        if (sets.length > 0) onSessionUpdate(muscle, sets)
       }
     }
   }
