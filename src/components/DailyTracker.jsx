@@ -209,59 +209,52 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
     saveTracker(next)
     setTracker(next)
 
-    if (viewDate === TODAY) {
-      const board = boards.find(b => b.id === boardId)
-      if (board) {
-        // Regular board exercise
-        const muscleGroup = PART_TO_MUSCLE[board.part] ?? board.part
-        const total = board.exercises.length
-        const done  = board.exercises.filter(e => next[viewDate][boardId]?.[e.id]?.done).length
-        const pct   = total > 0 ? Math.round(done / total * 100) : 0
-        if (onMuscleUpdate) onMuscleUpdate(muscleGroup, pctToLevel(pct))
-        if (onSessionUpdate) {
-          const sets = board.exercises
-            .filter(e => next[viewDate][boardId]?.[e.id]?.done)
-            .map(e => ({
-              exercise: e.name,
-              sets: e.sets,
-              reps: e.reps,
-              weight: next[viewDate][boardId]?.[e.id]?.weight || ''
-            }))
-          onSessionUpdate(muscleGroup, sets)
-        }
-      } else if (activePlan && boardId.startsWith('plan_')) {
-        // Plan day exercise — map each exercise to its own muscle group
-        const planDay = getPlanDayForDate(viewDate, activePlan)
-        if (planDay) {
-          const dayFallback = PLAN_DAY_TO_MUSCLE[planDay.day.toLowerCase()] ?? 'chest'
-
-          // Group exercises by resolved muscle group
-          const byMuscle = {}
-          planDay.exercises.forEach((ex, i) => {
-            const muscle = getExerciseMuscle(ex.name, dayFallback)
-            if (!byMuscle[muscle]) byMuscle[muscle] = { indices: [], exercises: [] }
-            byMuscle[muscle].indices.push(i)
-            byMuscle[muscle].exercises.push(ex)
-          })
-
-          // Update each muscle group independently
-          for (const [muscle, { indices, exercises }] of Object.entries(byMuscle)) {
-            const total = indices.length
-            const done  = indices.filter(i => next[viewDate][boardId]?.[i]?.done).length
-            const pct   = Math.round(done / total * 100)
-            if (onMuscleUpdate) onMuscleUpdate(muscle, pctToLevel(pct))
-            if (onSessionUpdate) {
-              const sets = exercises
-                .map((ex, j) => ({ ex, i: indices[j] }))
-                .filter(({ i }) => next[viewDate][boardId]?.[i]?.done)
-                .map(({ ex, i }) => ({
-                  exercise: ex.name,
-                  sets:     ex.sets,
-                  reps:     String(ex.reps),
-                  weight:   next[viewDate][boardId]?.[i]?.weight || ''
-                }))
-              if (sets.length > 0) onSessionUpdate(muscle, sets)
-            }
+    const board = boards.find(b => b.id === boardId)
+    if (board) {
+      const muscleGroup = PART_TO_MUSCLE[board.part] ?? board.part
+      const total = board.exercises.length
+      const done  = board.exercises.filter(e => next[viewDate][boardId]?.[e.id]?.done).length
+      const pct   = total > 0 ? Math.round(done / total * 100) : 0
+      // Only update 3D model colours for today
+      if (viewDate === TODAY && onMuscleUpdate) onMuscleUpdate(muscleGroup, pctToLevel(pct))
+      if (onSessionUpdate) {
+        const sets = board.exercises
+          .filter(e => next[viewDate][boardId]?.[e.id]?.done)
+          .map(e => ({
+            exercise: e.name,
+            sets:     e.sets,
+            reps:     e.reps,
+            weight:   next[viewDate][boardId]?.[e.id]?.weight || ''
+          }))
+        onSessionUpdate(muscleGroup, sets, viewDate)
+      }
+    } else if (activePlan && boardId.startsWith('plan_')) {
+      const planDay = getPlanDayForDate(viewDate, activePlan)
+      if (planDay) {
+        const dayFallback = PLAN_DAY_TO_MUSCLE[planDay.day.toLowerCase()] ?? 'chest'
+        const byMuscle = {}
+        planDay.exercises.forEach((ex, i) => {
+          const muscle = getExerciseMuscle(ex.name, dayFallback)
+          if (!byMuscle[muscle]) byMuscle[muscle] = { indices: [], exercises: [] }
+          byMuscle[muscle].indices.push(i)
+          byMuscle[muscle].exercises.push(ex)
+        })
+        for (const [muscle, { indices, exercises }] of Object.entries(byMuscle)) {
+          const total = indices.length
+          const done  = indices.filter(i => next[viewDate][boardId]?.[i]?.done).length
+          const pct   = Math.round(done / total * 100)
+          if (viewDate === TODAY && onMuscleUpdate) onMuscleUpdate(muscle, pctToLevel(pct))
+          if (onSessionUpdate) {
+            const sets = exercises
+              .map((ex, j) => ({ ex, i: indices[j] }))
+              .filter(({ i }) => next[viewDate][boardId]?.[i]?.done)
+              .map(({ ex, i }) => ({
+                exercise: ex.name,
+                sets:     ex.sets,
+                reps:     String(ex.reps),
+                weight:   next[viewDate][boardId]?.[i]?.weight || ''
+              }))
+            if (sets.length > 0) onSessionUpdate(muscle, sets, viewDate)
           }
         }
       }
@@ -277,8 +270,8 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
     saveTracker(next)
     setTracker(next)
 
-    // If exercise is already ticked, re-emit session so graph updates with new weight
-    if (!cur.done || viewDate !== TODAY || !onSessionUpdate) return
+    // Re-emit session with updated weight whenever exercise is already ticked
+    if (!cur.done || !onSessionUpdate) return
 
     const board = boards.find(b => b.id === boardId)
     if (board) {
@@ -291,7 +284,7 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
           reps:     e.reps,
           weight:   next[viewDate][boardId]?.[e.id]?.weight || ''
         }))
-      onSessionUpdate(muscleGroup, sets)
+      onSessionUpdate(muscleGroup, sets, viewDate)
     } else if (activePlan && boardId.startsWith('plan_')) {
       const planDay = getPlanDayForDate(viewDate, activePlan)
       if (!planDay) return
@@ -313,7 +306,7 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
             reps:     String(ex.reps),
             weight:   next[viewDate][boardId]?.[i]?.weight || ''
           }))
-        if (sets.length > 0) onSessionUpdate(muscle, sets)
+        if (sets.length > 0) onSessionUpdate(muscle, sets, viewDate)
       }
     }
   }
