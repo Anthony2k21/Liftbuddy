@@ -72,6 +72,23 @@ export default function App() {
   const [activeAnimation, setActiveAnimation]   = useState(null)
   const animInitialized                         = useRef(false)
 
+  const QUOTES = [
+    { text: "The only bad workout is the one that didn't happen.", author: "Unknown" },
+    { text: "Push yourself because no one else is going to do it for you.", author: "Unknown" },
+    { text: "Strength does not come from the body. It comes from the will.", author: "Unknown" },
+    { text: "The pain you feel today will be the strength you feel tomorrow.", author: "Unknown" },
+    { text: "Don't limit your challenges. Challenge your limits.", author: "Unknown" },
+    { text: "It never gets easier. You just get stronger.", author: "Unknown" },
+    { text: "Your body can stand almost anything. It's your mind you have to convince.", author: "Unknown" },
+    { text: "Success starts with self-discipline.", author: "Unknown" },
+    { text: "Train insane or remain the same.", author: "Unknown" },
+    { text: "Wake up. Work out. Look hot. Kick ass.", author: "Unknown" },
+    { text: "Sweat is just fat crying.", author: "Unknown" },
+    { text: "Be stronger than your excuses.", author: "Unknown" },
+  ]
+  const [quoteIdx, setQuoteIdx] = useState(() => Math.floor(Math.random() * 12))
+  const [quoteFade, setQuoteFade] = useState(true)
+
   useEffect(() => {
     if (!audioRef.current) return
     if (playing) {
@@ -103,6 +120,17 @@ export default function App() {
 
     return () => clearInterval(interval)
   }, [animationNames])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuoteFade(false)
+      setTimeout(() => {
+        setQuoteIdx(i => (i + 1) % QUOTES.length)
+        setQuoteFade(true)
+      }, 600)
+    }, 8000)
+    return () => clearInterval(interval)
+  }, [QUOTES.length])
 
   const dragging    = useRef(false)
   const prevPos     = useRef({ x: 0, y: 0 })
@@ -236,6 +264,10 @@ export default function App() {
         <div className={styles.scanlines} />
         <div className={styles.gradientTop} />
         <div className={styles.gradientBottom} />
+
+        <div className={`${styles.quoteOverlay} ${quoteFade ? styles.quoteVisible : styles.quoteHidden}`}>
+          <p className={styles.quoteText}>"{QUOTES[quoteIdx].text}"</p>
+        </div>
 
         {showArcUI && (
           <div className={styles.arcOverlay} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
