@@ -57,6 +57,7 @@ function calcStreak(calendar) {
   return streak
 }
 
+function loadCalendar() {
   try {
     return JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
   } catch { return {} }
