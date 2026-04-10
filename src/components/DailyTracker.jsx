@@ -39,7 +39,24 @@ function getPlanDayForDate(dateStr, plan) {
   return plan.schedule[idx % plan.schedule.length]
 }
 
-function loadCalendar() {
+function calcStreak(calendar) {
+  let streak = 0
+  const d = new Date(TODAY + 'T00:00:00')
+  // If today has no activity yet, start checking from yesterday
+  const todayData = calendar[TODAY]
+  const todayActive = todayData && Object.values(todayData).some(v => v !== 'rest')
+  if (!todayActive) d.setDate(d.getDate() - 1)
+
+  while (true) {
+    const key = d.toISOString().slice(0, 10)
+    const day = calendar[key]
+    if (!day || !Object.values(day).some(v => v !== 'rest')) break
+    streak++
+    d.setDate(d.getDate() - 1)
+  }
+  return streak
+}
+
   try {
     return JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
   } catch { return {} }
@@ -335,6 +352,7 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
   }
 
   const todayPlanDay = getPlanDayForDate(viewDate, activePlan)
+  const streak = calcStreak(loadCalendar())
 
   // Filter chart to only show exercises scheduled for the selected day
   const dayExerciseNames = todayPlanDay
@@ -344,14 +362,23 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
   return (
     <div className={styles.wrap}>
       <div className={styles.topbar}>
-        <h1 className={styles.title}>
-          {viewDate === TODAY ? 'TODAY' : new Date(viewDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-        </h1>
-        <div className={styles.date}>
-          {new Date(viewDate + 'T00:00:00').toLocaleDateString('en-GB', {
-            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-          })}
+        <div>
+          <h1 className={styles.title}>
+            {viewDate === TODAY ? 'TODAY' : new Date(viewDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+          </h1>
+          <div className={styles.date}>
+            {new Date(viewDate + 'T00:00:00').toLocaleDateString('en-GB', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            })}
+          </div>
         </div>
+        {streak > 0 && (
+          <div className={styles.streak}>
+            <span className={styles.streakFlame}>🔥</span>
+            <span className={styles.streakCount}>{streak}</span>
+            <span className={styles.streakLabel}>day streak</span>
+          </div>
+        )}
       </div>
 
       {activePlan && (
