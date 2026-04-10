@@ -343,25 +343,28 @@
 .quoteOverlay {
   position: absolute;
   bottom: 52px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   z-index: 4;
   pointer-events: none;
-  max-width: 280px;
-  text-align: center;
-  transition: opacity 0.6s ease;
+  overflow: hidden;
 }
 
-.quoteVisible { opacity: 1; }
-.quoteHidden  { opacity: 0; }
+@keyframes marqueeScroll {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100%); }
+}
 
 .quoteText {
-  font-size: 0.62rem;
-  letter-spacing: 1.2px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.28);
+  display: inline-block;
+  white-space: nowrap;
+  animation: marqueeScroll 18s linear forwards;
+  font-size: 0.65rem;
+  letter-spacing: 1.4px;
+  color: rgba(255, 255, 255, 0.32);
   font-style: italic;
-  text-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.2);
+  padding: 0 16px;
 }
 
 .assistantWrap {

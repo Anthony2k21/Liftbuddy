@@ -87,7 +87,6 @@ export default function App() {
     { text: "Be stronger than your excuses.", author: "Unknown" },
   ]
   const [quoteIdx, setQuoteIdx] = useState(() => Math.floor(Math.random() * 12))
-  const [quoteFade, setQuoteFade] = useState(true)
 
   useEffect(() => {
     if (!audioRef.current) return
@@ -123,12 +122,8 @@ export default function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setQuoteFade(false)
-      setTimeout(() => {
-        setQuoteIdx(i => (i + 1) % QUOTES.length)
-        setQuoteFade(true)
-      }, 600)
-    }, 8000)
+      setQuoteIdx(i => (i + 1) % QUOTES.length)
+    }, 18000)
     return () => clearInterval(interval)
   }, [QUOTES.length])
 
@@ -265,8 +260,8 @@ export default function App() {
         <div className={styles.gradientTop} />
         <div className={styles.gradientBottom} />
 
-        <div className={`${styles.quoteOverlay} ${quoteFade ? styles.quoteVisible : styles.quoteHidden}`}>
-          <p className={styles.quoteText}>"{QUOTES[quoteIdx].text}"</p>
+        <div className={styles.quoteOverlay}>
+          <p key={quoteIdx} className={styles.quoteText}>"{QUOTES[quoteIdx].text}"</p>
         </div>
 
         {showArcUI && (
