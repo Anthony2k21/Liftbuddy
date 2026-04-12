@@ -199,18 +199,6 @@ export default function App() {
         <span className={styles.weekLabel}>
           Week {weekNum} · {new Date().getFullYear()}
         </span>
-        <button
-          className={`${styles.musicBtn} ${playing ? styles.musicBtnActive : ''}`}
-          onClick={() => setPlaying(v => !v)}
-        >
-          {playing ? '▮▮' : '▶'}
-        </button>
-        <button
-          className={styles.resetBtn}
-          onClick={() => { localStorage.clear(); window.location.reload() }}
-        >
-          ↺
-        </button>
       </header>
 
       <div
