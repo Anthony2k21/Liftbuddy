@@ -308,22 +308,7 @@ export default function App() {
 
  
 
-        {animationNames.length > 1 && (
-          <div className={styles.animToggles}>
-            <select
-              className={styles.animSelect}
-              value={activeAnimation}
-              onChange={e => { e.stopPropagation(); setActiveAnimation(e.target.value) }}
-              onClick={e => e.stopPropagation()}
-            >
-              {animationNames.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className={styles.boardToggles}>
+<div className={styles.boardToggles}>
           <button
             className={`${styles.boardToggleBtn} ${showSessionBoard ? styles.boardToggleActive : ''}`}
             onClick={e => { e.stopPropagation(); setShowSessionBoard(v => !v) }}
