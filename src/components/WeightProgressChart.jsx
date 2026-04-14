@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { getWorkoutHistory } from '../lib/db'
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ReferenceDot,
@@ -144,19 +145,21 @@ function CustomTooltip({ active, payload, label, exerciseData }) {
   )
 }
 
-export function WeightProgressChart({ compact = false, filterExercises = null }) {
-  const [history, setHistory] = useState(() => loadHistory())
+export function WeightProgressChart({ userId, compact = false, filterExercises = null }) {
+  const [history, setHistory] = useState([])
   const [selectedEx, setSelectedEx] = useState('all')
 
+  const refresh = useCallback(() => {
+    if (!userId) return
+    getWorkoutHistory(userId).then(setHistory)
+  }, [userId])
+
+  useEffect(() => { refresh() }, [refresh])
+
   useEffect(() => {
-    function refresh() { setHistory(loadHistory()) }
     window.addEventListener('workoutHistoryUpdated', refresh)
-    window.addEventListener('storage', refresh)
-    return () => {
-      window.removeEventListener('workoutHistoryUpdated', refresh)
-      window.removeEventListener('storage', refresh)
-    }
-  }, [])
+    return () => window.removeEventListener('workoutHistoryUpdated', refresh)
+  }, [refresh])
   const [open, setOpen] = useState(true)
 
   const exerciseData = useMemo(

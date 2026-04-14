@@ -563,7 +563,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
       </div>
 
       <div className={styles.chartSection}>
-        <WeightProgressChart filterExercises={dayExerciseNames} />
+        <WeightProgressChart userId={userId} filterExercises={dayExerciseNames} />
       </div>
     </div>
   )
