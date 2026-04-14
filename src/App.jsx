@@ -54,10 +54,22 @@ export default function App() {
 
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Anthony'
 
-  return <AppInner userName={userName} signOut={signOut} />
+  return <AppInner userName={userName} userId={user.id} signOut={signOut} />
 }
 
-function AppInner({ userName, signOut }) {
+const STORAGE_KEYS = [
+  'workoutHistory', 'workoutBoards', 'workoutPlans', 'selectedPlanId',
+  'muscleCalendar', 'dailyTracker', 'aiChatHistory', 'completedBoards',
+]
+
+function clearUserData() {
+  STORAGE_KEYS.forEach(k => localStorage.removeItem(k))
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('sessionData_'))
+    .forEach(k => localStorage.removeItem(k))
+}
+
+function AppInner({ userName, userId, signOut }) {
   const [muscleData, setMuscleData]   = useState(() => {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
     return calendar[todayKey()] || INITIAL_MUSCLE_DATA
@@ -70,6 +82,17 @@ function AppInner({ userName, signOut }) {
   })
   const [activeModal, setActiveModal] = useState(null)
   const { logSession, history }       = useWorkoutHistory()
+
+  // Clear data when a different user logs in
+  useEffect(() => {
+    const prevUser = localStorage.getItem('active_user')
+    if (prevUser !== userId) {
+      clearUserData()
+      localStorage.setItem('active_user', userId)
+      setMuscleData(INITIAL_MUSCLE_DATA)
+      setSessionData({})
+    }
+  }, [userId])
 
   useEffect(() => {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
