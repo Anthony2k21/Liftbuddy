@@ -1,24 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getWorkoutHistory, upsertWorkoutSession } from '../lib/db'
 
-export function useWorkoutHistory() {
-  const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem('workoutHistory')
-    return saved ? JSON.parse(saved) : []
-  })
+export function useWorkoutHistory(userId) {
+  const [history, setHistory] = useState([])
 
-  function logSession(entry, date) {
-    const entryDate = (date || new Date().toISOString()).slice(0, 10)
-    // Read fresh from localStorage to avoid stale closure state
-    const current = JSON.parse(localStorage.getItem('workoutHistory') || '[]')
-    // Upsert — replace any entry for this muscle group on the same date
-    const filtered = current.filter(h => {
-      const hDate = h.date ? h.date.slice(0, 10) : null
-      return !(hDate === entryDate && h.muscleGroup === entry.muscleGroup)
+  useEffect(() => {
+    if (!userId) return
+    getWorkoutHistory(userId).then(setHistory)
+  }, [userId])
+
+  async function logSession(entry, date) {
+    if (!userId) return
+    await upsertWorkoutSession(userId, { ...entry, date })
+    getWorkoutHistory(userId).then(data => {
+      setHistory(data)
+      window.dispatchEvent(new Event('workoutHistoryUpdated'))
     })
-    const updated = [...filtered, { date: entryDate, ...entry }]
-    setHistory(updated)
-    localStorage.setItem('workoutHistory', JSON.stringify(updated))
-    window.dispatchEvent(new Event('workoutHistoryUpdated'))
   }
 
   return { history, logSession }

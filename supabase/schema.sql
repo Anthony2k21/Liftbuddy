@@ -20,6 +20,7 @@ create policy "Users see own workout_history"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+create unique index on workout_history (user_id, date, muscle_group);
 create index on workout_history (user_id, date);
 
 -- ─── workout_plans ────────────────────────────────────────────────────────────

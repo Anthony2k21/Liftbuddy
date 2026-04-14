@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './WorkoutLog.module.css'
+import { getWorkoutPlans, createWorkoutPlan, deleteWorkoutPlan, getSelectedPlanId, saveSelectedPlanId } from '../lib/db'
 
 const ACCENT_COLORS = [
   '#4f6cff','#00e5c8','#a56bff','#ff6bae',
@@ -63,21 +64,11 @@ const INITIAL_PLANS = [
   },
 ]
 
-function loadPlans() {
-  try {
-    const saved = localStorage.getItem('workoutPlans')
-    return saved ? JSON.parse(saved) : INITIAL_PLANS
-  } catch { return INITIAL_PLANS }
-}
-
 // ── COMPONENT ──────────────────────────────────────────────────────────────
-export function WorkoutLog() {
-  const [plans, setPlans]               = useState(loadPlans)
+export function WorkoutLog({ userId }) {
+  const [plans, setPlans]               = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
-  const [selectedPlanId, setSelectedPlanId] = useState(() => {
-    const saved = localStorage.getItem('selectedPlanId')
-    return saved ? JSON.parse(saved) : null
-  })
+  const [selectedPlanId, setSelectedPlanId] = useState(null)
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [planName,  setPlanName]  = useState('')
   const [planType,  setPlanType]  = useState('')
@@ -85,22 +76,25 @@ export function WorkoutLog() {
   const [planDays,  setPlanDays]  = useState(3)
   const [planColor, setPlanColor] = useState(ACCENT_COLORS[0])
   const [planDesc,  setPlanDesc]  = useState('')
-  const [nextPlanId, setNextPlanId] = useState(() => Math.max(...loadPlans().map(p => p.id), 2) + 1)
 
-  useEffect(() => { localStorage.setItem('workoutPlans', JSON.stringify(plans)) }, [plans])
-  useEffect(() => { localStorage.setItem('selectedPlanId', JSON.stringify(selectedPlanId)) }, [selectedPlanId])
-
-  // Re-read plans if updated by AI assistant
+  // Load plans and selected plan from Supabase on mount
   useEffect(() => {
-    function onStorage() { setPlans(loadPlans()) }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
+    if (!userId) return
+    getWorkoutPlans(userId).then(data => {
+      setPlans(data.length > 0 ? data : INITIAL_PLANS)
+    })
+    getSelectedPlanId(userId).then(setSelectedPlanId)
+  }, [userId])
 
-  function savePlan() {
+  // Persist selected plan to Supabase
+  useEffect(() => {
+    if (!userId || selectedPlanId === null) return
+    saveSelectedPlanId(userId, selectedPlanId)
+  }, [selectedPlanId, userId])
+
+  async function savePlan() {
     if (!planName.trim()) return
-    setPlans(prev => [...prev, {
-      id: nextPlanId,
+    const newPlan = {
       name: planName.trim(),
       type: planType.trim() || 'Custom',
       duration: planDur.trim() || '4 weeks',
@@ -108,15 +102,17 @@ export function WorkoutLog() {
       color: planColor,
       description: planDesc.trim(),
       schedule: [],
-    }])
-    setNextPlanId(n => n + 1)
+    }
+    const created = await createWorkoutPlan(userId, newPlan)
+    if (created) setPlans(prev => [...prev, created])
     setShowPlanModal(false)
     setPlanName(''); setPlanType(''); setPlanDur('4 weeks')
     setPlanDays(3); setPlanDesc('')
   }
 
-  function deletePlan(id, e) {
+  async function deletePlan(id, e) {
     e.stopPropagation()
+    await deleteWorkoutPlan(userId, id)
     setPlans(prev => prev.filter(p => p.id !== id))
     if (activePlanId === id) setActivePlanId(null)
     if (selectedPlanId === id) setSelectedPlanId(null)

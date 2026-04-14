@@ -14,6 +14,7 @@ import { DailyTracker } from './components/DailyTracker'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
+import { getMuscleCalendar, saveMuscleDay } from './lib/db'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
 import './index.css'
@@ -55,52 +56,25 @@ export default function App() {
   return <AppInner userName={userName} userId={user.id} signOut={signOut} />
 }
 
-const STORAGE_KEYS = [
-  'workoutHistory', 'workoutBoards', 'workoutPlans', 'selectedPlanId',
-  'muscleCalendar', 'dailyTracker', 'aiChatHistory', 'completedBoards',
-]
-
-function clearUserData() {
-  STORAGE_KEYS.forEach(k => localStorage.removeItem(k))
-  Object.keys(localStorage)
-    .filter(k => k.startsWith('sessionData_'))
-    .forEach(k => localStorage.removeItem(k))
-}
 
 function AppInner({ userName, userId, signOut }) {
-  const [muscleData, setMuscleData]   = useState(() => {
-    const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
-    return calendar[todayKey()] || INITIAL_MUSCLE_DATA
-  })
-  const [sessionData, setSessionData] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`sessionData_${todayKey()}`)
-      return saved ? JSON.parse(saved) : {}
-    } catch { return {} }
-  })
+  const [muscleData, setMuscleData]   = useState(INITIAL_MUSCLE_DATA)
+  const [sessionData, setSessionData] = useState({})
   const [activeModal, setActiveModal] = useState(null)
-  const { logSession, history }       = useWorkoutHistory()
+  const { logSession, history }       = useWorkoutHistory(userId)
 
-  // Clear data when a different user logs in
+  // Load today's muscle state from Supabase on mount
   useEffect(() => {
-    const prevUser = localStorage.getItem('active_user')
-    if (prevUser !== userId) {
-      clearUserData()
-      localStorage.setItem('active_user', userId)
-      setMuscleData(INITIAL_MUSCLE_DATA)
-      setSessionData({})
-    }
+    getMuscleCalendar(userId).then(calendar => {
+      const today = calendar[todayKey()]
+      if (today) setMuscleData(today)
+    })
   }, [userId])
 
+  // Save muscle state to Supabase whenever it changes
   useEffect(() => {
-    const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
-    calendar[todayKey()] = muscleData
-    localStorage.setItem('muscleCalendar', JSON.stringify(calendar))
-  }, [muscleData])
-
-  useEffect(() => {
-    localStorage.setItem(`sessionData_${todayKey()}`, JSON.stringify(sessionData))
-  }, [sessionData])
+    saveMuscleDay(userId, todayKey(), muscleData)
+  }, [muscleData, userId])
   const [activeTab, setActiveTab]     = useState('workout')
   const [autoRotate, setAutoRotate]   = useState(true)
   const [rotY, setRotY] = useState(0)
@@ -393,13 +367,14 @@ function AppInner({ userName, userId, signOut }) {
 
       {activeTab === 'log' && (
         <div className={styles.assistantWrap}>
-          <WorkoutLog />
+          <WorkoutLog userId={userId} />
         </div>
       )}
 
       {activeTab === 'tracker' && (
         <div className={styles.assistantWrap}>
           <DailyTracker
+            userId={userId}
             onMuscleUpdate={(part, level) => setMuscleData(prev => ({ ...prev, [part]: level }))}
             onSessionUpdate={(part, sets, date) => {
               if (!date || date === todayKey()) {

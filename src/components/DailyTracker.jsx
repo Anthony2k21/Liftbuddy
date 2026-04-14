@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import styles from './DailyTracker.module.css'
 import { WeightProgressChart } from './WeightProgressChart'
+import { getDailyTrackerDate, saveDailyTrackerDate, getMuscleCalendar, getWorkoutPlans, getSelectedPlanId } from '../lib/db'
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
@@ -20,12 +21,12 @@ const WORKOUT_DAYS_BY_FREQ = {
   7: [0, 1, 2, 3, 4, 5, 6],
 }
 
-function loadActivePlan() {
-  try {
-    const id    = JSON.parse(localStorage.getItem('selectedPlanId'))
-    const plans = JSON.parse(localStorage.getItem('workoutPlans') || '[]')
-    return plans.find(p => p.id === id) || null
-  } catch { return null }
+async function loadActivePlan(userId) {
+  const [plans, selectedId] = await Promise.all([
+    getWorkoutPlans(userId),
+    getSelectedPlanId(userId),
+  ])
+  return plans.find(p => p.id === selectedId) || null
 }
 
 // Returns the schedule block for a given date string, or null if rest day
@@ -57,12 +58,6 @@ function calcStreak(calendar) {
   return streak
 }
 
-function loadCalendar() {
-  try {
-    return JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
-  } catch { return {} }
-}
-
 function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate()
 }
@@ -71,23 +66,6 @@ function getFirstDayOfMonth(year, month) {
   return (new Date(year, month, 1).getDay() + 6) % 7
 }
 
-function loadBoards() {
-  try {
-    const saved = localStorage.getItem('workoutBoards')
-    return saved ? JSON.parse(saved) : []
-  } catch { return [] }
-}
-
-function loadTracker() {
-  try {
-    const saved = localStorage.getItem('dailyTracker')
-    return saved ? JSON.parse(saved) : {}
-  } catch { return {} }
-}
-
-function saveTracker(data) {
-  localStorage.setItem('dailyTracker', JSON.stringify(data))
-}
 
 const PART_TO_MUSCLE = {
   chest: 'chest', back: 'back', shoulders: 'shoulders',
@@ -196,23 +174,31 @@ function pctToLevel(pct) {
   return 'high'
 }
 
-export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
-  const [boards, setBoards]       = useState(loadBoards)
-  const [activePlan, setActivePlan] = useState(loadActivePlan)
-  const [tracker, setTracker]     = useState(loadTracker)
-  const [viewDate, setViewDate]   = useState(TODAY)
-  const [calYear, setCalYear]     = useState(new Date().getFullYear())
-  const [calMonth, setCalMonth]   = useState(new Date().getMonth())
+export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
+  const [boards, setBoards]         = useState(() => {
+    try { return JSON.parse(localStorage.getItem('workoutBoards') || '[]') } catch { return [] }
+  })
+  const [activePlan, setActivePlan] = useState(null)
+  const [tracker, setTracker]       = useState({})
+  const [calendar, setCalendar]     = useState({})
+  const [viewDate, setViewDate]     = useState(TODAY)
+  const [calYear, setCalYear]       = useState(new Date().getFullYear())
+  const [calMonth, setCalMonth]     = useState(new Date().getMonth())
 
-  // Re-read boards and active plan if updated elsewhere
+  // Load from Supabase on mount / userId change
   useEffect(() => {
-    function onStorage() {
-      setBoards(loadBoards())
-      setActivePlan(loadActivePlan())
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
+    if (!userId) return
+    loadActivePlan(userId).then(setActivePlan)
+    getMuscleCalendar(userId).then(setCalendar)
+  }, [userId])
+
+  // Load tracker data for viewDate from Supabase
+  useEffect(() => {
+    if (!userId) return
+    getDailyTrackerDate(userId, viewDate).then(data => {
+      setTracker(prev => ({ ...prev, [viewDate]: data }))
+    })
+  }, [userId, viewDate])
 
   function getEntry(boardId, exId) {
     return tracker[viewDate]?.[boardId]?.[exId] ?? { done: false, weight: '' }
@@ -224,8 +210,8 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
     if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
     const cur = next[viewDate][boardId][exId] ?? { done: false, weight: '' }
     next[viewDate][boardId][exId] = { ...cur, done: !cur.done }
-    saveTracker(next)
     setTracker(next)
+    saveDailyTrackerDate(userId, viewDate, next[viewDate])
 
     const board = boards.find(b => b.id === boardId)
     if (board) {
@@ -285,8 +271,8 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
     if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
     const cur = next[viewDate][boardId][exId] ?? { done: false, weight: '' }
     next[viewDate][boardId][exId] = { ...cur, weight }
-    saveTracker(next)
     setTracker(next)
+    saveDailyTrackerDate(userId, viewDate, next[viewDate])
 
     // Re-emit session with updated weight whenever exercise is already ticked
     if (!cur.done || !onSessionUpdate) return
@@ -337,8 +323,6 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
 
 
   // Calendar
-
-  const calendar = loadCalendar()
   const daysInMonth = getDaysInMonth(calYear, calMonth)
   const firstDay = getFirstDayOfMonth(calYear, calMonth)
   const monthLabel = new Date(calYear, calMonth).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
@@ -353,7 +337,7 @@ export function DailyTracker({ onMuscleUpdate, onSessionUpdate }) {
   }
 
   const todayPlanDay = getPlanDayForDate(viewDate, activePlan)
-  const streak = calcStreak(loadCalendar())
+  const streak = calcStreak(calendar)
 
   // Filter chart to only show exercises scheduled for the selected day
   const dayExerciseNames = todayPlanDay
