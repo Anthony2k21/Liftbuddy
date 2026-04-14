@@ -40,11 +40,33 @@
   opacity: 0.7;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .weekLabel {
   font-size: 0.75rem;
   color: var(--muted);
   letter-spacing: 2px;
   text-transform: uppercase;
+}
+
+.signOutBtn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  line-height: 1;
+}
+.signOutBtn:hover {
+  border-color: rgba(255,61,113,0.5);
+  color: #ff3d71;
 }
 
 .canvasWrap {

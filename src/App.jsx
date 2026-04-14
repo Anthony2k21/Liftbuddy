@@ -12,6 +12,8 @@ import { WorkoutLogBoard } from './components/WorkoutLogBoard'
 import { WorkoutLog } from './components/WorkoutLog'
 import { DailyTracker } from './components/DailyTracker'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
+import { useAuth } from './contexts/AuthContext'
+import { AuthScreen } from './components/AuthScreen'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
 import './index.css'
@@ -38,6 +40,20 @@ function setsToLevel(count) {
 }
 
 export default function App() {
+  const { session, user, signOut } = useAuth()
+
+  // Still loading session from Supabase
+  if (session === undefined) return null
+
+  // Not logged in — show auth screen
+  if (!session) return <AuthScreen />
+
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Anthony'
+
+  return <AppInner userName={userName} signOut={signOut} />
+}
+
+function AppInner({ userName, signOut }) {
   const [muscleData, setMuscleData]   = useState(() => {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
     return calendar[todayKey()] || INITIAL_MUSCLE_DATA
@@ -194,11 +210,14 @@ export default function App() {
       <header className={styles.header}>
         <div className={styles.titleGroup}>
           <h1 className={styles.title}>No1Assist</h1>
-          <span className={styles.welcomeText}>Welcome back, Anthony</span>
+          <span className={styles.welcomeText}>Welcome back, {userName}</span>
         </div>
-        <span className={styles.weekLabel}>
-          Week {weekNum} · {new Date().getFullYear()}
-        </span>
+        <div className={styles.headerRight}>
+          <span className={styles.weekLabel}>
+            Week {weekNum} · {new Date().getFullYear()}
+          </span>
+          <button className={styles.signOutBtn} onClick={signOut} title="Sign out">⏻</button>
+        </div>
       </header>
 
       <div
