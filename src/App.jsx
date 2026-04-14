@@ -42,19 +42,22 @@ function setsToLevel(count) {
 export default function App() {
   const { session, user, signOut } = useAuth()
 
-  // Still loading session from Supabase
-  if (session === undefined) return (
-    <div style={{ background: '#000', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', letterSpacing: '2px' }}>
-      LOADING…
-    </div>
-  )
-
-  // Not logged in — show auth screen
-  if (!session) return <AuthScreen />
-
+  // Always render AppInner (keeps Canvas alive so GLB loads immediately)
+  // Overlay AuthScreen when not logged in
+  const isReady = session !== undefined && !!session
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Anthony'
 
-  return <AppInner userName={userName} userId={user.id} signOut={signOut} />
+  return (
+    <>
+      <AppInner
+        userName={userName}
+        userId={user?.id ?? null}
+        signOut={signOut}
+        locked={!isReady}
+      />
+      {(session === undefined || !session) && <AuthScreen loading={session === undefined} />}
+    </>
+  )
 }
 
 const STORAGE_KEYS = [
@@ -69,7 +72,7 @@ function clearUserData() {
     .forEach(k => localStorage.removeItem(k))
 }
 
-function AppInner({ userName, userId, signOut }) {
+function AppInner({ userName, userId, signOut, locked }) {
   const [muscleData, setMuscleData]   = useState(() => {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
     return calendar[todayKey()] || INITIAL_MUSCLE_DATA
@@ -387,19 +390,19 @@ function AppInner({ userName, userId, signOut }) {
         />
       )}
 
-      {activeTab === 'assistant' && (
+      {!locked && activeTab === 'assistant' && (
         <div className={styles.assistantWrap}>
           <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} onUpdateBoards={handleUpdateBoards} onCreatePlan={handleCreatePlan} />
         </div>
       )}
 
-      {activeTab === 'log' && (
+      {!locked && activeTab === 'log' && (
         <div className={styles.assistantWrap}>
           <WorkoutLog />
         </div>
       )}
 
-      {activeTab === 'tracker' && (
+      {!locked && activeTab === 'tracker' && (
         <div className={styles.assistantWrap}>
           <DailyTracker
             onMuscleUpdate={(part, level) => setMuscleData(prev => ({ ...prev, [part]: level }))}
@@ -413,7 +416,7 @@ function AppInner({ userName, userId, signOut }) {
         </div>
       )}
 
-      <TabBar activeTab={activeTab} onChange={setActiveTab} />
+      {!locked && <TabBar activeTab={activeTab} onChange={setActiveTab} />}
 
     </div>
   )

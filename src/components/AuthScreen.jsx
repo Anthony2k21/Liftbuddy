@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import styles from './AuthScreen.module.css'
 
-export function AuthScreen() {
+export function AuthScreen({ loading: sessionLoading = false }) {
   const { signIn, signUp } = useAuth()
   const [mode, setMode]       = useState('login') // 'login' | 'signup'
   const [email, setEmail]     = useState('')
@@ -10,6 +10,12 @@ export function AuthScreen() {
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
+
+  if (sessionLoading) return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', letterSpacing: '3px' }}>LOADING…</div>
+    </div>
+  )
 
   async function handleSubmit(e) {
     e.preventDefault()
