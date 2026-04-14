@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei'
 
 export function BoxingBag(props) {
   const group = useRef()
-  const { scene } = useGLTF('/boxing_bag.glb') // path in public/
+  const { scene } = useGLTF(import.meta.env.BASE_URL + 'boxing_bag.glb')
 
   // Slow idle spin
   useFrame((_, delta) => {
