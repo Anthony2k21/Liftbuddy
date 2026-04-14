@@ -52,7 +52,7 @@ export function HumanModel({ muscleData, autoRotate, rotY, onClickModel, activeA
   const groupRef    = useRef()
   const glowRef     = useRef()
   const glowTexture  = useMemo(() => createCircleGlowTexture(), [])
-  const { scene, animations } = useGLTF(import.meta.env.BASE_URL + 'model.glb')
+  const { scene, animations } = useGLTF('/model.glb')
   const { actions, names }    = useAnimations(animations, groupRef)
 
   useEffect(() => {
@@ -177,4 +177,4 @@ useEffect(() => {
   )
 }
 
-useGLTF.preload(import.meta.env.BASE_URL + 'model.glb')
+useGLTF.preload('/model.glb')
