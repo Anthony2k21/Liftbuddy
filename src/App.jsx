@@ -12,6 +12,8 @@ import { WorkoutLogBoard } from './components/WorkoutLogBoard'
 import { WorkoutLog } from './components/WorkoutLog'
 import { DailyTracker } from './components/DailyTracker'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
+import { useAuth } from './contexts/AuthContext'
+import { AuthScreen } from './components/AuthScreen'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
 import './index.css'
@@ -38,6 +40,18 @@ function setsToLevel(count) {
 }
 
 export default function App() {
+  const { user, loading: authLoading, signOut } = useAuth()
+
+  // Show nothing while Supabase checks the session
+  if (authLoading) return null
+
+  // Show login/signup screen if no user
+  if (!user) return <AuthScreen />
+
+  return <AppInner user={user} signOut={signOut} />
+}
+
+function AppInner({ user, signOut }) {
   const [muscleData, setMuscleData]   = useState(() => {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
     return calendar[todayKey()] || INITIAL_MUSCLE_DATA
@@ -194,11 +208,18 @@ export default function App() {
       <header className={styles.header}>
         <div className={styles.titleGroup}>
           <h1 className={styles.title}>No1Assist</h1>
-          <span className={styles.welcomeText}>Welcome back, Anthony</span>
+          <span className={styles.welcomeText}>
+            Welcome back, {user.email.split('@')[0]}
+          </span>
         </div>
-        <span className={styles.weekLabel}>
-          Week {weekNum} · {new Date().getFullYear()}
-        </span>
+        <div className={styles.headerRight}>
+          <span className={styles.weekLabel}>
+            Week {weekNum} · {new Date().getFullYear()}
+          </span>
+          <button className={styles.logoutBtn} onClick={signOut} title="Sign out">
+            ⏻
+          </button>
+        </div>
       </header>
 
       <div

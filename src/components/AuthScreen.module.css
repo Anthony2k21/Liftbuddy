@@ -1,0 +1,131 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.card {
+  width: 90%;
+  max-width: 360px;
+  background: #0d1520;
+  border: 1px solid rgba(0, 229, 255, 0.12);
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.4rem;
+  letter-spacing: 0.22em;
+  color: #e5edf5;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.6),
+    0 0 16px rgba(0, 229, 255, 0.3);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 0.68rem;
+  color: #4a5568;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.63rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #00e5ff;
+  margin-top: 6px;
+}
+
+.input {
+  background: #0a0f1a;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 10px;
+  color: #e8edf2;
+  font-size: 0.95rem;
+  padding: 12px 14px;
+  outline: none;
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: rgba(0, 229, 255, 0.5);
+}
+
+.input::placeholder {
+  color: #2a3545;
+}
+
+.error {
+  font-size: 0.78rem;
+  color: #ff3d71;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.successMsg {
+  font-size: 0.78rem;
+  color: #39ff14;
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.btn {
+  background: #00e5ff;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  padding: 14px;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: opacity 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toggle {
+  font-size: 0.78rem;
+  color: #4a5568;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.toggleBtn {
+  background: none;
+  border: none;
+  color: #00e5ff;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0;
+  text-decoration: underline;
+  font-family: 'DM Sans', sans-serif;
+}
