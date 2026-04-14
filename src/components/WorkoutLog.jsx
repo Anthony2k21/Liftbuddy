@@ -78,10 +78,19 @@ export function WorkoutLog({ userId }) {
   const [planDesc,  setPlanDesc]  = useState('')
 
   // Load plans and selected plan from Supabase on mount
+  // If user has no plans yet, seed the defaults into Supabase so IDs are real
   useEffect(() => {
     if (!userId) return
-    getWorkoutPlans(userId).then(data => {
-      setPlans(data.length > 0 ? data : INITIAL_PLANS)
+    getWorkoutPlans(userId).then(async data => {
+      if (data.length > 0) {
+        setPlans(data)
+      } else {
+        // Seed initial plans into Supabase
+        const seeded = await Promise.all(
+          INITIAL_PLANS.map(p => createWorkoutPlan(userId, p))
+        )
+        setPlans(seeded.filter(Boolean))
+      }
     })
     getSelectedPlanId(userId).then(setSelectedPlanId)
   }, [userId])
