@@ -119,24 +119,11 @@ export async function deleteWorkoutPlan(userId, planId) {
 }
 
 export async function getSelectedPlanId(userId) {
-  // Store selected plan in muscle_calendar table's metadata isn't clean —
-  // use a dedicated approach: store it in a special daily_tracker row keyed "selected_plan"
-  const { data, error } = await supabase
-    .from('daily_tracker')
-    .select('data')
-    .eq('user_id', userId)
-    .eq('date', 'selected_plan')
-    .single()
-  if (error || !data) return null
-  return data.data?.planId ?? null
+  // Simple preference — store in localStorage scoped by userId
+  const val = localStorage.getItem(`selectedPlanId_${userId}`)
+  return val ? JSON.parse(val) : null
 }
 
-export async function saveSelectedPlanId(userId, planId) {
-  const { error } = await supabase
-    .from('daily_tracker')
-    .upsert(
-      { user_id: userId, date: 'selected_plan', data: { planId } },
-      { onConflict: 'user_id,date' }
-    )
-  if (error) console.error('saveSelectedPlanId', error)
+export function saveSelectedPlanId(userId, planId) {
+  localStorage.setItem(`selectedPlanId_${userId}`, JSON.stringify(planId))
 }

@@ -95,7 +95,7 @@ export function WorkoutLog({ userId }) {
     getSelectedPlanId(userId).then(setSelectedPlanId)
   }, [userId])
 
-  // Persist selected plan to Supabase
+  // Persist selected plan (localStorage, scoped by userId)
   useEffect(() => {
     if (!userId || selectedPlanId === null) return
     saveSelectedPlanId(userId, selectedPlanId)
