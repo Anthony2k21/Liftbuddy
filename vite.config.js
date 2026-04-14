@@ -12,8 +12,11 @@ export default defineConfig({
       'three',
       '@react-three/fiber',
       '@react-three/drei',
+      'zustand',
+      'suspend-react',
+      'maath',
+      '@supabase/supabase-js',
     ],
-    force: true,
   },
   server: {
     open: false,

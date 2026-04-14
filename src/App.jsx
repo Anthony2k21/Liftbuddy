@@ -43,7 +43,11 @@ export default function App() {
   const { session, user, signOut } = useAuth()
 
   // Still loading session from Supabase
-  if (session === undefined) return null
+  if (session === undefined) return (
+    <div style={{ background: '#000', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', letterSpacing: '2px' }}>
+      LOADING…
+    </div>
+  )
 
   // Not logged in — show auth screen
   if (!session) return <AuthScreen />

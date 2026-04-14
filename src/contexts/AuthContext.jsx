@@ -7,9 +7,9 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined) // undefined = loading
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => setSession(session))
+      .catch(() => setSession(null)) // env vars missing or network error → show auth screen
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
