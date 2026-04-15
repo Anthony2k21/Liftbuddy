@@ -11,6 +11,7 @@ import { InfoBoard } from './components/InfoBoard'
 import { WorkoutLogBoard } from './components/WorkoutLogBoard'
 import { WorkoutLog } from './components/WorkoutLog'
 import { DailyTracker } from './components/DailyTracker'
+import { Progress } from './pages/Progress'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
@@ -383,6 +384,12 @@ function AppInner({ userName, userId, signOut }) {
               logSession({ muscleGroup: part, sets }, date)
             }}
           />
+        </div>
+      )}
+
+      {activeTab === 'progress' && (
+        <div className={styles.assistantWrap}>
+          <Progress userId={userId} />
         </div>
       )}
 

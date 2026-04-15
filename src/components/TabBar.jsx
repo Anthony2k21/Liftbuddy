@@ -1,32 +1,25 @@
 import styles from './TabBar.module.css'
 
+const TABS = [
+  { id: 'workout',   label: '3D View'  },
+  { id: 'assistant', label: 'AI'       },
+  { id: 'log',       label: 'Plans'    },
+  { id: 'tracker',   label: 'Today'    },
+  { id: 'progress',  label: 'Progress' },
+]
+
 export function TabBar({ activeTab, onChange }) {
   return (
     <nav className={styles.tabBar}>
-      <button
-        className={`${styles.tab} ${activeTab === 'workout' ? styles.active : ''}`}
-        onClick={() => onChange('workout')}
-      >
-        3D View
-      </button>
-      <button
-        className={`${styles.tab} ${activeTab === 'assistant' ? styles.active : ''}`}
-        onClick={() => onChange('assistant')}
-      >
-        AI Assistant
-      </button>
-      <button
-        className={`${styles.tab} ${activeTab === 'log' ? styles.active : ''}`}
-        onClick={() => onChange('log')}
-      >
-        Workout Log
-      </button>
-      <button
-        className={`${styles.tab} ${activeTab === 'tracker' ? styles.active : ''}`}
-        onClick={() => onChange('tracker')}
-      >
-        Today
-      </button>
+      {TABS.map(({ id, label }) => (
+        <button
+          key={id}
+          className={`${styles.tab} ${activeTab === id ? styles.active : ''}`}
+          onClick={() => onChange(id)}
+        >
+          {label}
+        </button>
+      ))}
     </nav>
   )
 }
