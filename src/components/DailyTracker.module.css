@@ -191,6 +191,13 @@
   line-height: 1;
 }
 
+.calCheck {
+  font-size: 8px;
+  color: #39ff14;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .calPlanLabel {
   font-size: 6px;
   letter-spacing: 0.5px;

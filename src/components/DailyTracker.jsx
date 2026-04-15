@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import styles from './DailyTracker.module.css'
 import { WeightProgressChart } from './WeightProgressChart'
-import { getDailyTrackerDate, saveDailyTrackerDate, getMuscleCalendar, getWorkoutPlans, getSelectedPlanId } from '../lib/db'
+import { getDailyTrackerDate, saveDailyTrackerDate, getMuscleCalendar, getWorkoutPlans, getSelectedPlanId, getWorkoutHistory } from '../lib/db'
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
@@ -181,6 +181,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
   const [activePlan, setActivePlan] = useState(null)
   const [tracker, setTracker]       = useState({})
   const [calendar, setCalendar]     = useState({})
+  const [loggedDates, setLoggedDates] = useState(new Set())
   const [viewDate, setViewDate]     = useState(TODAY)
   const [calYear, setCalYear]       = useState(new Date().getFullYear())
   const [calMonth, setCalMonth]     = useState(new Date().getMonth())
@@ -190,6 +191,9 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
     if (!userId) return
     loadActivePlan(userId).then(setActivePlan)
     getMuscleCalendar(userId).then(setCalendar)
+    getWorkoutHistory(userId).then(history => {
+      setLoggedDates(new Set(history.map(h => h.date.slice(0, 10))))
+    })
   }, [userId])
 
   // Load tracker data for viewDate from Supabase
@@ -400,6 +404,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
             const muscles = calendar[dateStr]
             const trainedMuscles = muscles ? Object.entries(muscles).filter(([, v]) => v !== 'rest') : []
             const planBlock = getPlanDayForDate(dateStr, activePlan)
+            const hasWeights = loggedDates.has(dateStr)
             return (
               <button
                 key={dateStr}
@@ -407,7 +412,10 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
                 onClick={() => setViewDate(dateStr)}
               >
                 <span className={styles.calDayNum}>{day}</span>
-                {planBlock && (
+                {hasWeights && (
+                  <span className={styles.calCheck}>✓</span>
+                )}
+                {!hasWeights && planBlock && (
                   <span
                     className={styles.calPlanLabel}
                     style={{ color: activePlan.color }}
