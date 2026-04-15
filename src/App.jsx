@@ -259,7 +259,7 @@ function AppInner({ userName, userId, signOut }) {
               onEdit={setActiveModal}
             />
           )}
-          {showWorkoutBoard && <WorkoutLogBoard />}
+          {showWorkoutBoard && <WorkoutLogBoard userId={userId} />}
         </Canvas>
 
         <div className={styles.scanlines} />

@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
+import { getWorkoutPlans, getSelectedPlanId, getDailyTrackerDate } from '../lib/db'
 
 const BEBAS = '/fonts/bebas-neue.woff'
 
@@ -42,20 +44,6 @@ function BoardBorder({ w, h }) {
 }
 
 
-function loadBoards() {
-  try {
-    const saved = localStorage.getItem('workoutBoards')
-    return saved ? JSON.parse(saved) : []
-  } catch { return [] }
-}
-
-function loadCompleted() {
-  try {
-    const saved = localStorage.getItem('completedBoards')
-    return saved ? new Set(JSON.parse(saved)) : new Set()
-  } catch { return new Set() }
-}
-
 const WORKOUT_DAYS_BY_FREQ = {
   1: [0], 2: [0,3], 3: [0,2,4], 4: [0,1,3,4],
   5: [0,1,2,3,4], 6: [0,1,2,3,4,5], 7: [0,1,2,3,4,5,6],
@@ -63,40 +51,40 @@ const WORKOUT_DAYS_BY_FREQ = {
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
-function loadActivePlanDay() {
-  try {
-    const id    = JSON.parse(localStorage.getItem('selectedPlanId'))
-    const plans = JSON.parse(localStorage.getItem('workoutPlans') || '[]')
-    const plan  = plans.find(p => p.id === id)
-    if (!plan || !plan.schedule?.length) return null
-    const dowMon = (new Date().getDay() + 6) % 7
-    const workoutDays = WORKOUT_DAYS_BY_FREQ[plan.daysPerWeek] || []
-    const idx = workoutDays.indexOf(dowMon)
-    if (idx === -1) return { planId: plan.id, planName: plan.name, color: plan.color, day: null }
-    return { planId: plan.id, planName: plan.name, color: plan.color, day: plan.schedule[idx % plan.schedule.length] }
-  } catch { return null }
-}
-
-function loadTodayPlanProgress(planId, dayName) {
-  try {
-    const tracker = JSON.parse(localStorage.getItem('dailyTracker') || '{}')
-    const boardId = `plan_${planId}_${dayName}`
-    return tracker[TODAY]?.[boardId] || {}
-  } catch { return {} }
+async function fetchActivePlanDay(userId) {
+  const [plans, selectedId] = await Promise.all([
+    getWorkoutPlans(userId),
+    getSelectedPlanId(userId),
+  ])
+  const plan = plans.find(p => p.id === selectedId)
+  if (!plan || !plan.schedule?.length) return null
+  const dowMon = (new Date().getDay() + 6) % 7
+  const workoutDays = WORKOUT_DAYS_BY_FREQ[plan.daysPerWeek] || []
+  const idx = workoutDays.indexOf(dowMon)
+  if (idx === -1) return { planId: plan.id, planName: plan.name, color: plan.color, day: null }
+  return { planId: plan.id, planName: plan.name, color: plan.color, day: plan.schedule[idx % plan.schedule.length] }
 }
 
 
 const BAR_W = BOARD_W - 0.1
 const BAR_H = 0.016
 
-export function WorkoutLogBoard() {
-  const planInfo  = loadActivePlanDay()
-  const boards    = loadBoards()
-  const completed = loadCompleted()
+export function WorkoutLogBoard({ userId }) {
+  const [planInfo, setPlanInfo]         = useState(null)
+  const [todayProgress, setTodayProgress] = useState({})
 
-  const todayProgress = (planInfo?.day)
-    ? loadTodayPlanProgress(planInfo.planId, planInfo.day.day)
-    : {}
+  useEffect(() => {
+    if (!userId) return
+    fetchActivePlanDay(userId).then(info => {
+      setPlanInfo(info)
+      if (info?.day) {
+        const boardId = `plan_${info.planId}_${info.day.day}`
+        getDailyTrackerDate(userId, TODAY).then(data => {
+          setTodayProgress(data?.[boardId] || {})
+        })
+      }
+    })
+  }, [userId])
 
   const rows = []
   let y = BOARD_H / 2 - 0.1
@@ -197,46 +185,12 @@ export function WorkoutLogBoard() {
     )
     y -= 0.05
   } else {
-    // No active plan — show boards
-    if (boards.length === 0) {
-      rows.push(
-        <Text key="empty" position={[0, y, 0.005]} fontSize={0.03} color="#ffffff"
-          anchorX="center" anchorY="top">
-          No boards yet
-        </Text>
-      )
-      y -= 0.05
-    } else {
-      for (const b of boards.slice(0, 4)) {
-        rows.push(
-          <Text key={`b-${b.id}`} position={[-BOARD_W / 2 + 0.05, y, 0.005]}
-            fontSize={0.032} color="#ffffff" anchorX="left" anchorY="top" letterSpacing={0.06} font={BEBAS}>
-            {`${completed.has(b.id) ? '✓' : b.emoji}  ${b.name.toUpperCase()}`}
-          </Text>
-        )
-        y -= 0.048
-        for (const ex of b.exercises.slice(0, 2)) {
-          const label = `${ex.name}   ${ex.sets}×${ex.reps}${ex.weight ? `   ${ex.weight}kg` : ''}`
-          rows.push(
-            <Text key={`${b.id}-${ex.id}`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-              fontSize={0.022} color="#ffffff" anchorX="left" anchorY="top" maxWidth={BOARD_W - 0.1}>
-              {label}
-            </Text>
-          )
-          y -= 0.034
-        }
-        if (b.exercises.length > 2) {
-          rows.push(
-            <Text key={`${b.id}-more`} position={[-BOARD_W / 2 + 0.07, y, 0.005]}
-              fontSize={0.02} color="#ffffff" anchorX="left" anchorY="top">
-              {`+${b.exercises.length - 2} more`}
-            </Text>
-          )
-          y -= 0.028
-        }
-        y -= 0.014
-      }
-    }
+    rows.push(
+      <Text key="noplan" position={[0, y, 0.005]} fontSize={0.026}
+        color="rgba(255,255,255,0.4)" anchorX="center" anchorY="top" maxWidth={BOARD_W - 0.1}>
+        SELECT A PLAN IN WORKOUT LOG
+      </Text>
+    )
   }
 
 
