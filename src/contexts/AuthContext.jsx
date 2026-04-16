@@ -85,15 +85,20 @@ export function AuthProvider({ children }) {
 
   // Initialise session on mount
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        loadFromCloud(session.user.id)
-          .then(() => window.dispatchEvent(new Event('storage')))
-          .catch(console.error)
-      }
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          loadFromCloud(session.user.id)
+            .then(() => window.dispatchEvent(new Event('storage')))
+            .catch(console.error)
+        }
+        setLoading(false)
+      })
+      .catch(() => {
+        // Supabase not configured or unreachable — unblock the app
+        setLoading(false)
+      })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
