@@ -41,6 +41,29 @@ function setsToLevel(count) {
   return 'high'
 }
 
+const LEVEL_RANK = { rest: 0, low: 1, med: 2, high: 3 }
+function maxLevel(a, b) {
+  return LEVEL_RANK[a] >= LEVEL_RANK[b] ? a : b
+}
+
+// Aggregate max intensity per muscle from Monday through today
+function computeWeeklyDisplay(calendar, todayData) {
+  const today       = new Date()
+  const dayOfWeek   = today.getDay()
+  const daysFromMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  let result = { ...INITIAL_MUSCLE_DATA }
+  for (let i = 0; i <= daysFromMon; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - daysFromMon + i)
+    const key     = d.toISOString().slice(0, 10)
+    const dayData = key === todayKey() ? todayData : (calendar[key] || {})
+    for (const muscle of Object.keys(result)) {
+      result[muscle] = maxLevel(result[muscle], dayData[muscle] || 'rest')
+    }
+  }
+  return result
+}
+
 export default function App() {
   const { session, user, signOut } = useAuth()
 
@@ -59,22 +82,27 @@ export default function App() {
 
 
 function AppInner({ userName, userId, signOut }) {
-  const [muscleData, setMuscleData]   = useState(INITIAL_MUSCLE_DATA)
-  const [sessionData, setSessionData] = useState({})
-  const [activeModal, setActiveModal] = useState(null)
-  const { logSession, history }       = useWorkoutHistory(userId)
+  const [muscleData, setMuscleData]         = useState(INITIAL_MUSCLE_DATA)
+  const [weekDisplayData, setWeekDisplayData] = useState(INITIAL_MUSCLE_DATA)
+  const [sessionData, setSessionData]       = useState({})
+  const [activeModal, setActiveModal]       = useState(null)
+  const { logSession, history }             = useWorkoutHistory(userId)
 
-  // Load today's muscle state from Supabase on mount
+  // Load muscle state from Supabase on mount, build weekly display
   useEffect(() => {
     getMuscleCalendar(userId).then(calendar => {
-      const today = calendar[todayKey()]
-      if (today) setMuscleData(today)
+      const today = calendar[todayKey()] || INITIAL_MUSCLE_DATA
+      setMuscleData(today)
+      setWeekDisplayData(computeWeeklyDisplay(calendar, today))
     })
   }, [userId])
 
-  // Save muscle state to Supabase whenever it changes
+  // Save muscle state to Supabase and refresh weekly display
   useEffect(() => {
     saveMuscleDay(userId, todayKey(), muscleData)
+    getMuscleCalendar(userId).then(calendar => {
+      setWeekDisplayData(computeWeeklyDisplay(calendar, muscleData))
+    })
   }, [muscleData, userId])
   const [activeTab, setActiveTab]     = useState('workout')
   const [autoRotate, setAutoRotate]   = useState(true)
@@ -246,7 +274,7 @@ function AppInner({ userName, userId, signOut }) {
             rotation={[0, Math.PI / -4, 0]}
           />
           <HumanModel
-            muscleData={muscleData}
+            muscleData={weekDisplayData}
             autoRotate={autoRotate}
             rotY={rotY}
             onClickModel={() => setShowArcUI(v => !v)}
@@ -256,7 +284,7 @@ function AppInner({ userName, userId, signOut }) {
           {showSessionBoard && (
             <InfoBoard
               sessionData={sessionData}
-              muscleData={muscleData}
+              muscleData={weekDisplayData}
               onEdit={setActiveModal}
             />
           )}
