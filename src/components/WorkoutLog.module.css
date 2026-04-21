@@ -755,3 +755,56 @@
   padding: 8px 12px;
   cursor: pointer;
 }
+
+.topbarBtns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.addBtnAi {
+  background: rgba(165,107,255,0.1);
+  border: 1px solid rgba(165,107,255,0.35);
+  border-radius: 6px;
+  color: #a56bff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addBtnAi:hover {
+  background: rgba(165,107,255,0.2);
+}
+
+.aiTextarea {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(0,229,255,0.2);
+  border-radius: 6px;
+  color: #e8eaf0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  padding: 10px 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.aiTextarea:focus {
+  border-color: rgba(0,229,255,0.5);
+}
+
+.aiError {
+  font-size: 11px;
+  color: #ff6b6b;
+  padding: 4px 0;
+}
+
+.btnSave:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -65,6 +65,27 @@ const INITIAL_PLANS = [
 ]
 
 // ── COMPONENT ──────────────────────────────────────────────────────────────
+const AI_PLAN_PROMPT = `You are a fitness plan generator. The user will describe the workout plan they want.
+Output ONLY a JSON object wrapped in <PLAN>...</PLAN> tags with this exact schema — no other text:
+<PLAN>{
+  "name": "Plan Name",
+  "type": "Plan Type (e.g. Push Pull Legs, Strength, Hypertrophy, Full Body, Custom)",
+  "duration": "X weeks",
+  "daysPerWeek": 3,
+  "color": "#4f6cff",
+  "description": "Brief description of the plan.",
+  "schedule": [
+    {
+      "day": "Day label (e.g. Push, Pull, Legs, Monday, Workout A)",
+      "exercises": [
+        { "name": "Exercise Name", "sets": 3, "reps": "8-10" }
+      ]
+    }
+  ]
+}</PLAN>
+Pick a color from: #4f6cff #00e5c8 #a56bff #ff6bae #ffd166 #ff9f40 #ff6b6b #43e97b #00e5ff
+Include a complete, realistic schedule with proper exercises. Output ONLY the <PLAN> block.`
+
 export function WorkoutLog({ userId }) {
   const [plans, setPlans]               = useState([])
   const [activePlanId, setActivePlanId] = useState(null)
@@ -76,6 +97,10 @@ export function WorkoutLog({ userId }) {
   const [planDays,  setPlanDays]  = useState(3)
   const [planColor, setPlanColor] = useState(ACCENT_COLORS[0])
   const [planDesc,  setPlanDesc]  = useState('')
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [aiPrompt,  setAiPrompt]  = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError,   setAiError]   = useState('')
 
   // Load plans and selected plan from Supabase on mount
   // If user has no plans yet, seed the defaults into Supabase so IDs are real
@@ -127,6 +152,41 @@ export function WorkoutLog({ userId }) {
     if (selectedPlanId === id) setSelectedPlanId(null)
   }
 
+  async function generateAiPlan() {
+    const text = aiPrompt.trim()
+    if (!text || aiLoading) return
+    setAiLoading(true)
+    setAiError('')
+    try {
+      const contents = [
+        { role: 'user',  parts: [{ text: AI_PLAN_PROMPT }] },
+        { role: 'model', parts: [{ text: 'Ready. Describe the plan.' }] },
+        { role: 'user',  parts: [{ text }] },
+      ]
+      const res  = await fetch('/api/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ contents }),
+      })
+      const data = await res.json()
+      const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      const match = raw.match(/<PLAN>([\s\S]*?)<\/PLAN>/)
+      if (!match) throw new Error('No plan returned. Try describing it differently.')
+      const plan = JSON.parse(match[1])
+      const created = await createWorkoutPlan(userId, plan)
+      if (created) {
+        setPlans(prev => [...prev, created])
+        setActivePlanId(created.id)
+      }
+      setShowAiModal(false)
+      setAiPrompt('')
+    } catch (err) {
+      setAiError(err.message || 'Something went wrong. Try again.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   // ── RENDER ──
   return (
     <div className={styles.wrap}>
@@ -140,7 +200,10 @@ export function WorkoutLog({ userId }) {
               {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
             </div>
           </div>
-          <button className={styles.addBtn} onClick={() => setShowPlanModal(true)}>+ Add Plan</button>
+          <div className={styles.topbarBtns}>
+            <button className={styles.addBtnAi} onClick={() => setShowAiModal(true)}>✨ AI Plan</button>
+            <button className={styles.addBtn} onClick={() => setShowPlanModal(true)}>+ Add Plan</button>
+          </div>
         </div>
 
         {/* Plans list */}
@@ -221,6 +284,31 @@ export function WorkoutLog({ userId }) {
           )}
         </div>
       </div>
+
+      {/* ── AI PLAN MODAL ── */}
+      {showAiModal && (
+        <div className={styles.modalBackdrop} onClick={() => { setShowAiModal(false); setAiError('') }}>
+          <div className={styles.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>✨ AI Plan Generator</h3>
+            <label className={styles.label}>Describe your plan</label>
+            <textarea
+              className={styles.aiTextarea}
+              value={aiPrompt}
+              onChange={e => setAiPrompt(e.target.value)}
+              placeholder="e.g. A 4-day upper/lower split for building strength over 8 weeks, intermediate level"
+              rows={4}
+              onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) generateAiPlan() }}
+            />
+            {aiError && <div className={styles.aiError}>{aiError}</div>}
+            <div className={styles.modalBtns}>
+              <button className={styles.btnSave} onClick={generateAiPlan} disabled={aiLoading}>
+                {aiLoading ? 'Generating…' : 'Generate Plan'}
+              </button>
+              <button className={styles.btnCancel} onClick={() => { setShowAiModal(false); setAiError('') }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── ADD PLAN MODAL ── */}
       {showPlanModal && (
