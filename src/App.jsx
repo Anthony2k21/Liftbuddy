@@ -39,6 +39,29 @@ function setsToLevel(count) {
   return 'high'
 }
 
+const LEVEL_RANK = { rest: 0, low: 1, med: 2, high: 3 }
+function maxLevel(a, b) {
+  return LEVEL_RANK[a] >= LEVEL_RANK[b] ? a : b
+}
+
+// Aggregate max intensity for each muscle across Mon–today
+function computeWeeklyDisplay(calendar, todayData) {
+  const today    = new Date()
+  const dayOfWeek   = today.getDay()
+  const daysFromMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  let result = { ...INITIAL_MUSCLE_DATA }
+  for (let i = 0; i <= daysFromMon; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - daysFromMon + i)
+    const key     = d.toISOString().slice(0, 10)
+    const dayData = key === todayKey() ? todayData : (calendar[key] || {})
+    for (const muscle of Object.keys(result)) {
+      result[muscle] = maxLevel(result[muscle], dayData[muscle] || 'rest')
+    }
+  }
+  return result
+}
+
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuth()
 
@@ -56,6 +79,10 @@ function AppInner({ user, signOut }) {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
     return calendar[todayKey()] || INITIAL_MUSCLE_DATA
   })
+  const [weekDisplayData, setWeekDisplayData] = useState(() => {
+    const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
+    return computeWeeklyDisplay(calendar, calendar[todayKey()] || INITIAL_MUSCLE_DATA)
+  })
   const [sessionData, setSessionData] = useState(() => {
     try {
       const saved = localStorage.getItem(`sessionData_${todayKey()}`)
@@ -69,6 +96,7 @@ function AppInner({ user, signOut }) {
     const calendar = JSON.parse(localStorage.getItem('muscleCalendar') || '{}')
     calendar[todayKey()] = muscleData
     localStorage.setItem('muscleCalendar', JSON.stringify(calendar))
+    setWeekDisplayData(computeWeeklyDisplay(calendar, muscleData))
   }, [muscleData])
 
   useEffect(() => {
@@ -248,7 +276,7 @@ function AppInner({ user, signOut }) {
             rotation={[0, Math.PI / -4, 0]}
           />
           <HumanModel
-            muscleData={muscleData}
+            muscleData={weekDisplayData}
             autoRotate={autoRotate}
             rotY={rotY}
             onClickModel={() => setShowArcUI(v => !v)}
@@ -258,7 +286,7 @@ function AppInner({ user, signOut }) {
           {showSessionBoard && (
             <InfoBoard
               sessionData={sessionData}
-              muscleData={muscleData}
+              muscleData={weekDisplayData}
               onEdit={setActiveModal}
             />
           )}
