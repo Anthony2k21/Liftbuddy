@@ -15,7 +15,8 @@ import { Progress } from './pages/Progress'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
-import { getMuscleCalendar, saveMuscleDay } from './lib/db'
+import { getMuscleCalendar, saveMuscleDay, saveSessionRating } from './lib/db'
+import { SessionRatingModal } from './components/SessionRatingModal'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
 import './index.css'
@@ -83,7 +84,8 @@ export default function App() {
 
 function AppInner({ userName, userId, signOut }) {
   const [muscleData, setMuscleData]         = useState(INITIAL_MUSCLE_DATA)
-  const [weekDisplayData, setWeekDisplayData] = useState(INITIAL_MUSCLE_DATA)
+  const [weekDisplayData, setWeekDisplayData]   = useState(INITIAL_MUSCLE_DATA)
+  const [showRatingModal, setShowRatingModal]   = useState(false)
   const [sessionData, setSessionData]       = useState({})
   const [activeModal, setActiveModal]       = useState(null)
   const { logSession, history }             = useWorkoutHistory(userId)
@@ -196,6 +198,15 @@ function AppInner({ userName, userId, signOut }) {
     localStorage.setItem('workoutPlans', JSON.stringify([...existing, newPlan]))
     localStorage.setItem('selectedPlanId', JSON.stringify(newPlan.id))
     window.dispatchEvent(new Event('storage'))
+  }
+
+  async function handleRatingClose(score) {
+    setShowRatingModal(false)
+    if (score == null) return
+    const today = todayKey()
+    await Promise.all(
+      Object.keys(sessionData).map(mg => saveSessionRating(userId, today, mg, score))
+    )
   }
 
   function handleSave({ muscleGroup, sets }) {
@@ -368,6 +379,14 @@ function AppInner({ userName, userId, signOut }) {
           >
             WORKOUT LOG
           </button>
+          {Object.keys(sessionData).length > 0 && (
+            <button
+              className={styles.rateBtn}
+              onClick={e => { e.stopPropagation(); setShowRatingModal(true) }}
+            >
+              ★ Rate Session
+            </button>
+          )}
         </div>
 
         {autoRotate && (
@@ -379,6 +398,14 @@ function AppInner({ userName, userId, signOut }) {
 
 
       </div>
+
+      {showRatingModal && (
+        <SessionRatingModal
+          sessionData={sessionData}
+          history={history}
+          onClose={rating => handleRatingClose(rating)}
+        />
+      )}
 
       {activeModal && (
         <WorkoutModal
