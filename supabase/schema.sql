@@ -10,6 +10,7 @@ create table if not exists workout_history (
   date          date not null,
   muscle_group  text not null,
   sets          jsonb not null default '[]',
+  rating        real,
   created_at    timestamptz default now()
 );
 
@@ -22,6 +23,9 @@ create policy "Users see own workout_history"
 
 create unique index on workout_history (user_id, date, muscle_group);
 create index on workout_history (user_id, date);
+
+-- Migration: add session rating column (run separately if table already exists)
+-- alter table workout_history add column if not exists rating real;
 
 -- ─── workout_plans ────────────────────────────────────────────────────────────
 create table if not exists workout_plans (

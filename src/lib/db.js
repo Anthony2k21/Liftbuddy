@@ -13,15 +13,24 @@ export async function getWorkoutHistory(userId) {
   return data.map(r => ({ date: r.date, muscleGroup: r.muscle_group, sets: r.sets }))
 }
 
-export async function upsertWorkoutSession(userId, { muscleGroup, sets, date }) {
+export async function upsertWorkoutSession(userId, { muscleGroup, sets, date, rating }) {
   const entryDate = (date || new Date().toISOString()).slice(0, 10)
+  const row = { user_id: userId, date: entryDate, muscle_group: muscleGroup, sets }
+  if (rating !== undefined) row.rating = rating
   const { error } = await supabase
     .from('workout_history')
-    .upsert(
-      { user_id: userId, date: entryDate, muscle_group: muscleGroup, sets },
-      { onConflict: 'user_id,date,muscle_group' }
-    )
+    .upsert(row, { onConflict: 'user_id,date,muscle_group' })
   if (error) console.error('upsertWorkoutSession', error)
+}
+
+export async function saveSessionRating(userId, date, muscleGroup, rating) {
+  const { error } = await supabase
+    .from('workout_history')
+    .update({ rating })
+    .eq('user_id', userId)
+    .eq('date', date)
+    .eq('muscle_group', muscleGroup)
+  if (error) console.error('saveSessionRating', error)
 }
 
 // ── MUSCLE CALENDAR ───────────────────────────────────────────────────────────

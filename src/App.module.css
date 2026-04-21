@@ -355,6 +355,27 @@
   background: rgba(0,229,255,0.08);
 }
 
+.rateBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: 20px;
+  color: #ffd700;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.rateBtn:hover {
+  background: rgba(255, 215, 0, 0.15);
+}
+
 .toggleDot {
   width: 6px;
   height: 6px;
