@@ -379,7 +379,7 @@ function AppInner({ userName, userId, signOut }) {
           >
             WORKOUT LOG
           </button>
-          {Object.keys(sessionData).length > 0 && (
+          {activeTab === 'workout' && (
             <button
               className={styles.rateBtn}
               onClick={e => { e.stopPropagation(); setShowRatingModal(true) }}
