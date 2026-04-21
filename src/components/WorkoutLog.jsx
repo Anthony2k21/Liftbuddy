@@ -169,7 +169,8 @@ export function WorkoutLog({ userId }) {
         body:    JSON.stringify({ contents }),
       })
       const data = await res.json()
-      const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+      const parts = data.candidates?.[0]?.content?.parts ?? []
+      const raw   = parts.map(p => p.text || '').join('')
       const match = raw.match(/<PLAN>([\s\S]*?)<\/PLAN>/)
       if (!match) throw new Error('No plan returned. Try describing it differently.')
       const plan = JSON.parse(match[1])
