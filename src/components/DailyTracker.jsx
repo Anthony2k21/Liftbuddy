@@ -208,7 +208,10 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
     return tracker[viewDate]?.[boardId]?.[exId] ?? { done: false, weight: '' }
   }
 
+  const isFuture = viewDate > TODAY
+
   function toggleDone(boardId, exId) {
+    if (isFuture) return
     const next = structuredClone(tracker)
     if (!next[viewDate]) next[viewDate] = {}
     if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
@@ -270,6 +273,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
   }
 
   function setWeight(boardId, exId, weight) {
+    if (isFuture) return
     const next = structuredClone(tracker)
     if (!next[viewDate]) next[viewDate] = {}
     if (!next[viewDate][boardId]) next[viewDate][boardId] = {}
@@ -401,6 +405,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
             const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
             const isToday = dateStr === TODAY
             const isSelected = dateStr === viewDate
+            const isFutureDay = dateStr > TODAY
             const muscles = calendar[dateStr]
             const trainedMuscles = muscles ? Object.entries(muscles).filter(([, v]) => v !== 'rest') : []
             const planBlock = getPlanDayForDate(dateStr, activePlan)
@@ -408,8 +413,9 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
             return (
               <button
                 key={dateStr}
-                className={`${styles.calDay} ${isToday ? styles.calToday : ''} ${isSelected ? styles.calSelected : ''}`}
-                onClick={() => setViewDate(dateStr)}
+                className={`${styles.calDay} ${isToday ? styles.calToday : ''} ${isSelected ? styles.calSelected : ''} ${isFutureDay ? styles.calFuture : ''}`}
+                onClick={() => !isFutureDay && setViewDate(dateStr)}
+                disabled={isFutureDay}
               >
                 <span className={styles.calDayNum}>{day}</span>
                 {hasWeights && (
@@ -435,6 +441,12 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
           })}
         </div>
       </div>
+
+      {isFuture && (
+        <div className={styles.futureBanner}>
+          You can't log exercises for a future date.
+        </div>
+      )}
 
       <div className={styles.boards}>
         {/* ── Active plan day view ── */}
