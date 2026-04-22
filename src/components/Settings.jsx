@@ -15,10 +15,14 @@ export function Settings({
   open,
   onClose,
   userName,
+  displayName,
+  onUpdateName,
   userEmail,
   userId,
   playing,
   onToggleMusic,
+  showModel,
+  onToggleModel,
   showSessionBoard,
   onToggleSessionBoard,
   showWorkoutBoard,
@@ -26,14 +30,15 @@ export function Settings({
   onResetToday,
   signOut,
 }) {
-  const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmReset, setConfirmReset]   = useState(false)
   const [confirmSignOut, setConfirmSignOut] = useState(false)
+  const [editingName, setEditingName]     = useState(false)
+  const [nameValue, setNameValue]         = useState('')
 
   if (!open) return null
 
-  const initials = userName
-    ? userName.slice(0, 2).toUpperCase()
-    : '?'
+  const shownName = displayName || userName || '?'
+  const initials  = shownName.slice(0, 2).toUpperCase()
 
   async function handleResetToday() {
     if (!confirmReset) { setConfirmReset(true); return }
@@ -48,6 +53,17 @@ export function Settings({
     signOut()
   }
 
+  function startEditName() {
+    setNameValue(shownName)
+    setEditingName(true)
+  }
+
+  function saveName() {
+    const trimmed = nameValue.trim()
+    if (trimmed) onUpdateName(trimmed)
+    setEditingName(false)
+  }
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.drawer} onClick={e => e.stopPropagation()}>
@@ -58,7 +74,24 @@ export function Settings({
           <div className={styles.profile}>
             <div className={styles.avatar}>{initials}</div>
             <div className={styles.profileInfo}>
-              <div className={styles.profileName}>{userName}</div>
+              {editingName ? (
+                <div className={styles.nameEdit}>
+                  <input
+                    className={styles.nameInput}
+                    value={nameValue}
+                    onChange={e => setNameValue(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && saveName()}
+                    autoFocus
+                    maxLength={30}
+                  />
+                  <button className={styles.nameSaveBtn} onClick={saveName}>Save</button>
+                </div>
+              ) : (
+                <div className={styles.nameRow}>
+                  <div className={styles.profileName}>{shownName}</div>
+                  <button className={styles.editNameBtn} onClick={startEditName}>Edit</button>
+                </div>
+              )}
               {userEmail && <div className={styles.profileEmail}>{userEmail}</div>}
             </div>
           </div>
@@ -69,6 +102,16 @@ export function Settings({
         {/* 3D View */}
         <section className={styles.section}>
           <div className={styles.sectionLabel}>3D VIEW</div>
+
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Show 3D model</span>
+            <button
+              className={`${styles.toggle} ${showModel ? styles.toggleOn : ''}`}
+              onClick={onToggleModel}
+            >
+              <span className={styles.toggleKnob} />
+            </button>
+          </div>
 
           <div className={styles.row}>
             <span className={styles.rowLabel}>Session log board</span>
@@ -116,7 +159,7 @@ export function Settings({
             className={`${styles.dangerBtn} ${confirmReset ? styles.dangerConfirm : ''}`}
             onClick={handleResetToday}
           >
-            {confirmReset ? 'Tap again to confirm' : 'Reset today\'s session'}
+            {confirmReset ? 'Tap again to confirm' : "Reset today's session"}
           </button>
         </section>
 

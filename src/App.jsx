@@ -89,6 +89,10 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   const [activeModal, setActiveModal]       = useState(null)
   const { logSession, history }             = useWorkoutHistory(userId)
 
+  const [displayName, setDisplayName] = useState(
+    () => localStorage.getItem(`displayName_${userId}`) || userName
+  )
+
   // Load muscle state from Supabase on mount, build weekly display
   useEffect(() => {
     getMuscleCalendar(userId).then(calendar => {
@@ -111,6 +115,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   const [showArcUI, setShowArcUI]               = useState(false)
   const [showSessionBoard, setShowSessionBoard] = useState(true)
   const [showWorkoutBoard, setShowWorkoutBoard] = useState(true)
+  const [showModel, setShowModel]               = useState(true)
   const [playing, setPlaying]                   = useState(false)
   const [showSettings, setShowSettings]         = useState(false)
   const audioRef                                = useRef(null)
@@ -245,7 +250,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       <header className={styles.header}>
         <div className={styles.titleGroup}>
           <h1 className={styles.title}>No1Assist</h1>
-          <span className={styles.welcomeText}>Welcome back, {userName}</span>
+          <span className={styles.welcomeText}>Welcome back, {displayName}</span>
         </div>
         <div className={styles.headerRight}>
           <span className={styles.weekLabel}>
@@ -285,14 +290,16 @@ function AppInner({ userName, userEmail, userId, signOut }) {
             scale={0.009}
             rotation={[0, Math.PI / -4, 0]}
           />
-          <HumanModel
-            muscleData={weekDisplayData}
-            autoRotate={autoRotate}
-            rotY={rotY}
-            onClickModel={() => setShowArcUI(v => !v)}
-            activeAnimation={activeAnimation}
-            onAnimationsLoaded={setAnimationNames}
-          />
+          {showModel && (
+            <HumanModel
+              muscleData={weekDisplayData}
+              autoRotate={autoRotate}
+              rotY={rotY}
+              onClickModel={() => setShowArcUI(v => !v)}
+              activeAnimation={activeAnimation}
+              onAnimationsLoaded={setAnimationNames}
+            />
+          )}
           {showSessionBoard && (
             <InfoBoard
               sessionData={sessionData}
@@ -437,8 +444,15 @@ function AppInner({ userName, userEmail, userId, signOut }) {
         userName={userName}
         userEmail={userEmail}
         userId={userId}
+        displayName={displayName}
+        onUpdateName={name => {
+          setDisplayName(name)
+          localStorage.setItem(`displayName_${userId}`, name)
+        }}
         playing={playing}
         onToggleMusic={() => setPlaying(v => !v)}
+        showModel={showModel}
+        onToggleModel={() => setShowModel(v => !v)}
         showSessionBoard={showSessionBoard}
         onToggleSessionBoard={() => setShowSessionBoard(v => !v)}
         showWorkoutBoard={showWorkoutBoard}
