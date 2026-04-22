@@ -53,20 +53,22 @@
   text-transform: uppercase;
 }
 
-.signOutBtn {
+.settingsBtn {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 6px;
+  border-radius: 8px;
   color: rgba(255,255,255,0.4);
-  font-size: 0.85rem;
-  padding: 4px 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
-  line-height: 1;
 }
-.signOutBtn:hover {
-  border-color: rgba(255,61,113,0.5);
-  color: #ff3d71;
+.settingsBtn:hover {
+  border-color: rgba(0,229,255,0.4);
+  color: #00e5ff;
 }
 
 .canvasWrap {

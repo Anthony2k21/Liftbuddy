@@ -1,0 +1,184 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+}
+
+.drawer {
+  width: 100%;
+  background: #0d1422;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 0 32px;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.section {
+  padding: 6px 20px;
+}
+
+.sectionLabel {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 12px;
+  padding-top: 2px;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 8px 0;
+}
+
+/* Profile */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(165,107,255,0.2));
+  border: 1px solid rgba(0,229,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  color: #00e5ff;
+  flex-shrink: 0;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profileName {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.3px;
+}
+
+.profileEmail {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Toggle rows */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.rowLabel {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.toggle {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background: #00e5ff;
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  transition: transform 0.2s;
+}
+
+.toggleOn .toggleKnob {
+  transform: translateX(18px);
+}
+
+/* Buttons */
+.dangerBtn {
+  width: 100%;
+  padding: 13px;
+  background: rgba(255, 61, 113, 0.08);
+  border: 1px solid rgba(255, 61, 113, 0.25);
+  border-radius: 12px;
+  color: #ff3d71;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.dangerBtn:hover {
+  background: rgba(255, 61, 113, 0.15);
+}
+
+.dangerConfirm {
+  border-color: rgba(255, 61, 113, 0.7);
+  background: rgba(255, 61, 113, 0.18);
+}
+
+.signOutBtn {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.signOutBtn:hover {
+  border-color: rgba(255, 61, 113, 0.4);
+  color: #ff3d71;
+}
+
+.signOutBtn.dangerConfirm {
+  border-color: rgba(255, 61, 113, 0.7);
+  color: #ff3d71;
+  background: rgba(255, 61, 113, 0.1);
+}

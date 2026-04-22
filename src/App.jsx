@@ -11,6 +11,7 @@ import { WorkoutLogBoard } from './components/WorkoutLogBoard'
 import { WorkoutLog } from './components/WorkoutLog'
 import { DailyTracker } from './components/DailyTracker'
 import { Progress } from './pages/Progress'
+import { Settings } from './components/Settings'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
@@ -77,11 +78,11 @@ export default function App() {
 
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Anthony'
 
-  return <AppInner userName={userName} userId={user.id} signOut={signOut} />
+  return <AppInner userName={userName} userEmail={user?.email} userId={user.id} signOut={signOut} />
 }
 
 
-function AppInner({ userName, userId, signOut }) {
+function AppInner({ userName, userEmail, userId, signOut }) {
   const [muscleData, setMuscleData]         = useState(INITIAL_MUSCLE_DATA)
   const [weekDisplayData, setWeekDisplayData]   = useState(INITIAL_MUSCLE_DATA)
   const [sessionData, setSessionData]       = useState({})
@@ -111,6 +112,7 @@ function AppInner({ userName, userId, signOut }) {
   const [showSessionBoard, setShowSessionBoard] = useState(true)
   const [showWorkoutBoard, setShowWorkoutBoard] = useState(true)
   const [playing, setPlaying]                   = useState(false)
+  const [showSettings, setShowSettings]         = useState(false)
   const audioRef                                = useRef(null)
   const [animationNames, setAnimationNames]     = useState([])
   const [activeAnimation, setActiveAnimation]   = useState(null)
@@ -249,7 +251,12 @@ function AppInner({ userName, userId, signOut }) {
           <span className={styles.weekLabel}>
             Week {weekNum} · {new Date().getFullYear()}
           </span>
-          <button className={styles.signOutBtn} onClick={signOut} title="Sign out">⏻</button>
+          <button className={styles.settingsBtn} onClick={() => setShowSettings(true)} title="Settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -423,6 +430,25 @@ function AppInner({ userName, userId, signOut }) {
           <Progress userId={userId} />
         </div>
       )}
+
+      <Settings
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        userName={userName}
+        userEmail={userEmail}
+        userId={userId}
+        playing={playing}
+        onToggleMusic={() => setPlaying(v => !v)}
+        showSessionBoard={showSessionBoard}
+        onToggleSessionBoard={() => setShowSessionBoard(v => !v)}
+        showWorkoutBoard={showWorkoutBoard}
+        onToggleWorkoutBoard={() => setShowWorkoutBoard(v => !v)}
+        onResetToday={() => {
+          setMuscleData(INITIAL_MUSCLE_DATA)
+          setSessionData({})
+        }}
+        signOut={signOut}
+      />
 
       <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
