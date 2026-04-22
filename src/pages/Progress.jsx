@@ -3,8 +3,9 @@ import { getWorkoutHistory } from '../lib/db'
 import { StatsSummaryStrip }  from '../components/progress/StatsSummaryStrip'
 import { BodyPartPieChart }   from '../components/progress/BodyPartPieChart'
 import { PBTracker }          from '../components/progress/PBTracker'
-import { VolumeBarChart }     from '../components/progress/VolumeBarChart'
-import { WeightProgressChart } from '../components/WeightProgressChart'
+import { VolumeBarChart }       from '../components/progress/VolumeBarChart'
+import { SessionRatingChart }   from '../components/progress/SessionRatingChart'
+import { WeightProgressChart }  from '../components/WeightProgressChart'
 import styles from './Progress.module.css'
 
 export function Progress({ userId }) {
@@ -43,6 +44,10 @@ export function Progress({ userId }) {
       ) : (
         <div className={styles.content}>
           <StatsSummaryStrip history={history} />
+
+          <div className={styles.section}>
+            <SessionRatingChart history={history} />
+          </div>
 
           <div className={styles.section}>
             <WeightProgressChart userId={userId} />

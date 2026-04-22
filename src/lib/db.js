@@ -9,8 +9,12 @@ export async function getWorkoutHistory(userId) {
     .eq('user_id', userId)
     .order('date', { ascending: true })
   if (error) { console.error('getWorkoutHistory', error); return [] }
-  // Normalise to the shape components expect: { date, muscleGroup, sets }
-  return data.map(r => ({ date: r.date, muscleGroup: r.muscle_group, sets: r.sets }))
+  return data.map(r => ({
+    date:        r.date,
+    muscleGroup: r.muscle_group,
+    sets:        r.sets,
+    rating:      r.rating ?? null,
+  }))
 }
 
 export async function upsertWorkoutSession(userId, { muscleGroup, sets, date, rating }) {

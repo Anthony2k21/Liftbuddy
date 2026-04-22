@@ -16,7 +16,7 @@ import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { getMuscleCalendar, saveMuscleDay, saveSessionRating } from './lib/db'
-import { SessionRatingModal } from './components/SessionRatingModal'
+import { calculateSessionRating } from './utils/calculateSessionRating'
 // import { GymFloor } from './components/GymFloor'
 // import { GymWall } from './components/GymWall'
 import './index.css'
@@ -85,7 +85,6 @@ export default function App() {
 function AppInner({ userName, userId, signOut }) {
   const [muscleData, setMuscleData]         = useState(INITIAL_MUSCLE_DATA)
   const [weekDisplayData, setWeekDisplayData]   = useState(INITIAL_MUSCLE_DATA)
-  const [showRatingModal, setShowRatingModal]   = useState(false)
   const [sessionData, setSessionData]       = useState({})
   const [activeModal, setActiveModal]       = useState(null)
   const { logSession, history }             = useWorkoutHistory(userId)
@@ -200,22 +199,18 @@ function AppInner({ userName, userId, signOut }) {
     window.dispatchEvent(new Event('storage'))
   }
 
-  async function handleRatingClose(score) {
-    setShowRatingModal(false)
-    if (score == null) return
-    const today = todayKey()
-    await Promise.all(
-      Object.keys(sessionData).map(mg => saveSessionRating(userId, today, mg, score))
-    )
-  }
-
-  function handleSave({ muscleGroup, sets }) {
-    setSessionData(prev => ({ ...prev, [muscleGroup]: sets }))
+  async function handleSave({ muscleGroup, sets }) {
+    const newSessionData = { ...sessionData, [muscleGroup]: sets }
+    setSessionData(newSessionData)
     setMuscleData(prev => ({
       ...prev,
       [muscleGroup]: setsToLevel(sets.reduce((total, e) => total + parseInt(e.sets, 10), 0))
     }))
     logSession({ muscleGroup, sets })
+    // Auto-calculate and persist rating for every muscle group logged today
+    const { score } = calculateSessionRating(newSessionData, history)
+    const today = todayKey()
+    Object.keys(newSessionData).forEach(mg => saveSessionRating(userId, today, mg, score))
   }
 
   const onPointerDown = useCallback((e) => {
@@ -379,14 +374,6 @@ function AppInner({ userName, userId, signOut }) {
           >
             WORKOUT LOG
           </button>
-          {activeTab === 'workout' && (
-            <button
-              className={styles.rateBtn}
-              onClick={e => { e.stopPropagation(); setShowRatingModal(true) }}
-            >
-              ★ Rate Session
-            </button>
-          )}
         </div>
 
         {autoRotate && (
@@ -398,14 +385,6 @@ function AppInner({ userName, userId, signOut }) {
 
 
       </div>
-
-      {showRatingModal && (
-        <SessionRatingModal
-          sessionData={sessionData}
-          history={history}
-          onClose={rating => handleRatingClose(rating)}
-        />
-      )}
 
       {activeModal && (
         <WorkoutModal
