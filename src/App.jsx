@@ -413,7 +413,11 @@ function AppInner({ userName, userId, signOut }) {
             onMuscleUpdate={(part, level) => setMuscleData(prev => ({ ...prev, [part]: level }))}
             onSessionUpdate={(part, sets, date) => {
               if (!date || date === todayKey()) {
-                setSessionData(prev => ({ ...prev, [part]: sets }))
+                const newSessionData = { ...sessionData, [part]: sets }
+                setSessionData(newSessionData)
+                const { score } = calculateSessionRating(newSessionData, history)
+                const today = todayKey()
+                Object.keys(newSessionData).forEach(mg => saveSessionRating(userId, today, mg, score))
               }
               logSession({ muscleGroup: part, sets }, date)
             }}
