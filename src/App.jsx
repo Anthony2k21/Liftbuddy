@@ -6,7 +6,6 @@ import { FlatBench } from './components/flat_bench'
 import { PullUpBar } from './components/pull_up_bar'
 import { BoxingBag } from './components/boxing_bag'
 import { TabBar } from './components/TabBar'
-import { AiAssistant } from './components/AiAssistant'
 import { InfoBoard } from './components/InfoBoard'
 import { WorkoutLogBoard } from './components/WorkoutLogBoard'
 import { WorkoutLog } from './components/WorkoutLog'
@@ -392,12 +391,6 @@ function AppInner({ userName, userId, signOut }) {
           onSave={handleSave}
           onClose={() => setActiveModal(null)}
         />
-      )}
-
-      {activeTab === 'assistant' && (
-        <div className={styles.assistantWrap}>
-          <AiAssistant muscleData={muscleData} history={history} onLogWorkout={handleSave} onUpdateBoards={handleUpdateBoards} onCreatePlan={handleCreatePlan} />
-        </div>
       )}
 
       {activeTab === 'log' && (

@@ -1,11 +1,10 @@
 import styles from './TabBar.module.css'
 
 const TABS = [
-  { id: 'workout',   label: '3D View'  },
-  { id: 'assistant', label: 'AI'       },
-  { id: 'log',       label: 'Plans'    },
-  { id: 'tracker',   label: 'Today'    },
-  { id: 'progress',  label: 'Progress' },
+  { id: 'workout',  label: '3D View'  },
+  { id: 'log',      label: 'Plans'    },
+  { id: 'tracker',  label: 'Today'    },
+  { id: 'progress', label: 'Progress' },
 ]
 
 export function TabBar({ activeTab, onChange }) {
