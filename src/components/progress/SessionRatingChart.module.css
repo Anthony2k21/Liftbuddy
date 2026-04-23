@@ -57,9 +57,16 @@
   letter-spacing: 0.1em;
 }
 
+.tooltipExercises {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+  font-family: 'DM Sans', sans-serif;
+}
+
 .tooltipWeight {
   font-size: 11px;
   letter-spacing: 0.5px;
-  margin-top: 4px;
+  margin-top: 3px;
   font-family: 'DM Sans', sans-serif;
 }
