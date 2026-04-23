@@ -11,9 +11,9 @@ const LABEL_COLORS = {
   Excellent: '#39ff14',
   Good:      '#39ff14',
   Decent:    '#00e5ff',
-  Average:   '#f5a623',
-  Poor:      '#ff6bae',
-  Disaster:  '#ff3d71',
+  Poor:      '#f5a623',
+  Disaster:  '#ff6bae',
+  Abysmal:   '#ff3d71',
 }
 
 function getLabel(score) {
@@ -22,9 +22,9 @@ function getLabel(score) {
   if (score >= 8.5)  return 'Excellent'
   if (score >= 7.5)  return 'Good'
   if (score >= 6.5)  return 'Decent'
-  if (score >= 5.5)  return 'Average'
-  if (score >= 4.0)  return 'Poor'
-  return 'Disaster'
+  if (score >= 5.5)  return 'Poor'
+  if (score >= 4.0)  return 'Disaster'
+  return 'Abysmal'
 }
 
 function getBiggestWeightChange(date, history) {

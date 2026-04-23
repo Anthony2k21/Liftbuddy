@@ -26,9 +26,9 @@ function getLabel(score) {
   if (score >= 8.5)  return 'Excellent'
   if (score >= 7.5)  return 'Good'
   if (score >= 6.5)  return 'Decent'
-  if (score >= 5.5)  return 'Average'
-  if (score >= 4.0)  return 'Poor'
-  return 'Disaster'
+  if (score >= 5.5)  return 'Poor'
+  if (score >= 4.0)  return 'Disaster'
+  return 'Abysmal'
 }
 
 export function calculateSessionRating(sessionData, history) {
@@ -195,9 +195,9 @@ export function calculateSessionRating(sessionData, history) {
   else if (score >= 8.5) summary = `Excellent work. ${exercisesImproved > 0 ? `Progressed on ${exercisesImproved} exercise${exercisesImproved > 1 ? 's' : ''}.` : 'Strong consistent effort.'}`
   else if (score >= 7.5) summary = `Good session. ${prCount > 0 ? `${prCount} PR${prCount > 1 ? 's' : ''} in the bag.` : 'Steady progress.'}`
   else if (score >= 6.5) summary = `Decent effort. Keep showing up and the gains follow.`
-  else if (score >= 5.5) summary = `Average session. Push a little harder next time.`
-  else if (score >= 4.0) summary = `Below your usual standard. Identify what held you back.`
-  else                   summary = `Tough day. Rest up, eat well, and come back stronger.`
+  else if (score >= 5.5) summary = `Poor session. Push a little harder next time.`
+  else if (score >= 4.0) summary = `Disaster. Well below your standard — identify what held you back.`
+  else                   summary = `Abysmal. Rest up, eat well, and come back stronger.`
 
   return { score, label, summary, highlights, lowlights, pr_count: prCount }
 }
