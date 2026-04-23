@@ -32,15 +32,15 @@ function getBiggestWeightChange(date, history) {
   const priorHistory  = history.filter(s => s.date < date)
   if (!priorHistory.length) return null
 
-  let biggestChange = null
-  let biggestAbs    = 0
+  let biggestChange   = null
+  let biggestExercise = null
+  let biggestAbs      = 0
 
   for (const session of todaySessions) {
     for (const set of (session.sets || [])) {
       const weight = parseFloat(set.weight)
       if (!weight) continue
 
-      // Most recent prior session containing the same exercise
       const priorSession = [...priorHistory]
         .reverse()
         .find(s => s.sets?.some(e => e.exercise === set.exercise))
@@ -52,13 +52,14 @@ function getBiggestWeightChange(date, history) {
 
       const change = weight - priorWeight
       if (Math.abs(change) > biggestAbs) {
-        biggestAbs    = Math.abs(change)
-        biggestChange = change
+        biggestAbs      = Math.abs(change)
+        biggestChange   = change
+        biggestExercise = set.exercise
       }
     }
   }
 
-  return biggestAbs > 0 ? biggestChange : null
+  return biggestAbs > 0 ? { change: biggestChange, exercise: biggestExercise } : null
 }
 
 function CustomDot({ cx, cy, payload }) {
@@ -73,7 +74,7 @@ function CustomTooltip({ active, payload }) {
   if (score == null) return null
   const label = getLabel(score)
   const color = LABEL_COLORS[label]
-  const isUp  = weightChange > 0
+  const isUp  = weightChange?.change > 0
   return (
     <div className={styles.tooltip}>
       <div className={styles.tooltipDate}>{date}</div>
@@ -82,7 +83,7 @@ function CustomTooltip({ active, payload }) {
       </div>
       {weightChange != null && (
         <div className={styles.tooltipWeight} style={{ color: isUp ? '#39ff14' : '#ff3d71' }}>
-          {isUp ? '▲' : '▼'} {Math.abs(weightChange)}kg
+          {isUp ? '▲' : '▼'} {Math.abs(weightChange.change)}kg · {weightChange.exercise}
         </div>
       )}
     </div>
