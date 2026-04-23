@@ -27,6 +27,40 @@ function getLabel(score) {
   return 'Disaster'
 }
 
+function getBiggestWeightChange(date, history) {
+  const todaySessions = history.filter(s => s.date === date)
+  const priorHistory  = history.filter(s => s.date < date)
+  if (!priorHistory.length) return null
+
+  let biggestChange = null
+  let biggestAbs    = 0
+
+  for (const session of todaySessions) {
+    for (const set of (session.sets || [])) {
+      const weight = parseFloat(set.weight)
+      if (!weight) continue
+
+      // Most recent prior session containing the same exercise
+      const priorSession = [...priorHistory]
+        .reverse()
+        .find(s => s.sets?.some(e => e.exercise === set.exercise))
+      if (!priorSession) continue
+
+      const priorSet    = priorSession.sets.find(e => e.exercise === set.exercise)
+      const priorWeight = parseFloat(priorSet?.weight)
+      if (!priorWeight) continue
+
+      const change = weight - priorWeight
+      if (Math.abs(change) > biggestAbs) {
+        biggestAbs    = Math.abs(change)
+        biggestChange = change
+      }
+    }
+  }
+
+  return biggestAbs > 0 ? biggestChange : null
+}
+
 function CustomDot({ cx, cy, payload }) {
   if (payload.score == null) return null
   const color = LABEL_COLORS[getLabel(payload.score)] ?? '#00e5ff'
@@ -35,36 +69,43 @@ function CustomDot({ cx, cy, payload }) {
 
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
-  const { date, score } = payload[0].payload
+  const { date, score, weightChange } = payload[0].payload
   if (score == null) return null
   const label = getLabel(score)
   const color = LABEL_COLORS[label]
+  const isUp  = weightChange > 0
   return (
     <div className={styles.tooltip}>
       <div className={styles.tooltipDate}>{date}</div>
       <div className={styles.tooltipScore} style={{ color }}>
         {score.toFixed(1)} — {label}
       </div>
+      {weightChange != null && (
+        <div className={styles.tooltipWeight} style={{ color: isUp ? '#39ff14' : '#ff3d71' }}>
+          {isUp ? '▲' : '▼'} {Math.abs(weightChange)}kg
+        </div>
+      )}
     </div>
   )
 }
 
 export function SessionRatingChart({ history }) {
   const data = useMemo(() => {
-    // One point per date — use the first non-null rating found for that day
     const byDate = {}
     for (const session of history) {
       if (session.rating != null && !byDate[session.date]) {
         byDate[session.date] = session.rating
       }
     }
-    return Object.entries(byDate)
+    const sorted = Object.entries(byDate)
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-30)
-      .map(([date, score]) => ({
-        date: date.slice(5), // MM-DD
-        score,
-      }))
+    return sorted.map(([date, score]) => ({
+      date:         date.slice(5),
+      fullDate:     date,
+      score,
+      weightChange: getBiggestWeightChange(date, history),
+    }))
   }, [history])
 
   if (data.length === 0) {

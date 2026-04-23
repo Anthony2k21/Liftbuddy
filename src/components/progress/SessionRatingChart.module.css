@@ -56,3 +56,10 @@
   font-size: 1.1rem;
   letter-spacing: 0.1em;
 }
+
+.tooltipWeight {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  font-family: 'DM Sans', sans-serif;
+}
