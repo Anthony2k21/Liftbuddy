@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import styles from './DailyTracker.module.css'
 import { WeightProgressChart } from './WeightProgressChart'
-import { getDailyTrackerDate, saveDailyTrackerDate, getMuscleCalendar, getWorkoutPlans, getSelectedPlanId, getWorkoutHistory } from '../lib/db'
+import { getDailyTrackerDate, saveDailyTrackerDate, getMuscleCalendar, getWorkoutPlans, getSelectedPlanId, getWorkoutHistory, saveWeekAssignment } from '../lib/db'
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
@@ -212,8 +212,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
     loadActivePlan(userId).then(plan => {
       setActivePlan(plan)
       if (plan) {
-        const saved = localStorage.getItem(`weekAssignment_${plan.id}`)
-        setWeekAssignment(saved ? JSON.parse(saved) : buildDefaultAssignment(plan))
+        setWeekAssignment(plan.weekAssignment ?? buildDefaultAssignment(plan))
       }
     })
     getMuscleCalendar(userId).then(setCalendar)
@@ -654,7 +653,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
               style={{ background: activePlan.color }}
               onClick={() => {
                 setWeekAssignment(draftAssignment)
-                localStorage.setItem(`weekAssignment_${activePlan.id}`, JSON.stringify(draftAssignment))
+                saveWeekAssignment(userId, activePlan.id, draftAssignment)
                 setShowScheduleEditor(false)
               }}
             >

@@ -100,6 +100,7 @@ export async function getWorkoutPlans(userId) {
     color: r.color,
     description: r.description,
     schedule: r.schedule,
+    weekAssignment: r.week_assignment ?? null,
   }))
 }
 
@@ -120,6 +121,15 @@ export async function createWorkoutPlan(userId, plan) {
     .single()
   if (error) { console.error('createWorkoutPlan', error); return null }
   return { ...plan, id: data.id }
+}
+
+export async function saveWeekAssignment(userId, planId, weekAssignment) {
+  const { error } = await supabase
+    .from('workout_plans')
+    .update({ week_assignment: weekAssignment })
+    .eq('user_id', userId)
+    .eq('id', planId)
+  if (error) console.error('saveWeekAssignment', error)
 }
 
 export async function deleteWorkoutPlan(userId, planId) {
