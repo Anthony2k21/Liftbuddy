@@ -20,6 +20,34 @@ function parseReps(v) {
   return isNaN(n) ? 1 : n
 }
 
+function getWeekKey(dateStr) {
+  const d   = new Date(dateStr + 'T00:00:00')
+  const dow = d.getDay()
+  const mon = new Date(d)
+  mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1))
+  return mon.toISOString().slice(0, 10)
+}
+
+// How many consecutive past sessions for this exercise had a lower weight than the one before
+function consecutiveDeclinesForExercise(exerciseName, history) {
+  const sessions = history
+    .filter(s => s.sets?.some(e => e.exercise === exerciseName))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const weights = sessions.map(s => {
+    const w = s.sets.filter(e => e.exercise === exerciseName).map(e => toNum(e.weight)).filter(w => w > 0)
+    return w.length ? Math.max(...w) : 0
+  }).filter(w => w > 0)
+
+  // Count consecutive declines going backwards from most recent
+  let count = 0
+  for (let i = weights.length - 1; i > 0; i--) {
+    if (weights[i] < weights[i - 1]) count++
+    else break
+  }
+  return count
+}
+
 function getLabel(score) {
   if (score >= 10.0) return 'Perfect'
   if (score >= 9.5)  return 'Legendary'
@@ -38,7 +66,7 @@ export function calculateSessionRating(sessionData, history) {
   if (todayExercises.length === 0) {
     return {
       score:      1.0,
-      label:      'Disaster',
+      label:      'Abysmal',
       summary:    'No exercises logged.',
       highlights: [],
       lowlights:  ['Empty session — nothing was recorded.'],
@@ -49,6 +77,10 @@ export function calculateSessionRating(sessionData, history) {
   // Build historical lookup from all past sessions (excluding today)
   const today = new Date().toISOString().slice(0, 10)
   const past  = (history || []).filter(h => h.date !== today)
+
+  // Grace period: be lenient for the first 3 weeks of data
+  const weeksOfHistory = new Set(past.map(s => getWeekKey(s.date))).size
+  const isGracePeriod  = weeksOfHistory < 3
 
   // bestWeights[exercise] = highest weight ever (before today)
   const bestWeights = {}
@@ -92,8 +124,22 @@ export function calculateSessionRating(sessionData, history) {
       totalImprovementPct += pct
       improvedNames.push(ex.exercise)
     } else if (w < prevBest * 0.85) {
-      totalImprovementPct -= 10
-      regressedNames.push(ex.exercise)
+      const declines = consecutiveDeclinesForExercise(ex.exercise, past)
+      if (isGracePeriod) {
+        // First 3 weeks: single drops are expected, very light touch
+        totalImprovementPct -= 1
+      } else if (declines >= 3) {
+        // 3+ sessions in a row dropping — genuinely bad trend
+        totalImprovementPct -= 10
+        regressedNames.push(ex.exercise)
+      } else if (declines === 2) {
+        // Two consecutive drops — warn but don't destroy the score
+        totalImprovementPct -= 5
+        regressedNames.push(ex.exercise)
+      } else {
+        // Isolated drop — could be deload, off day, or finding working weight
+        totalImprovementPct -= 2
+      }
     }
   }
 
@@ -101,7 +147,9 @@ export function calculateSessionRating(sessionData, history) {
     const rate    = exercisesImproved / exercisesWithHistory
     const avgPct  = totalImprovementPct / exercisesWithHistory
     weightScore   = 5.0 + (rate * 3.5) + Math.min(Math.max(avgPct * 0.12, -1.5), 1.5)
-    weightScore   = Math.max(2.0, Math.min(10.0, weightScore))
+    // Grace period: floor score so early weeks don't tank below Decent
+    const floor   = isGracePeriod ? 6.0 : 2.0
+    weightScore   = Math.max(floor, Math.min(10.0, weightScore))
   }
 
   // ── 2. VOLUME PROGRESSION (30%) ──────────────────────────────────────────
@@ -129,7 +177,7 @@ export function calculateSessionRating(sessionData, history) {
     else if (ratio >= 1.05) volumeScore = 8.5
     else if (ratio >= 0.95) volumeScore = 7.5
     else if (ratio >= 0.85) volumeScore = 6.0
-    else                    volumeScore = 4.5
+    else                    volumeScore = isGracePeriod ? 6.0 : 4.5
   }
 
   // ── 3. PR COUNT (20%) ────────────────────────────────────────────────────
