@@ -102,6 +102,140 @@
   opacity: 0.5;
 }
 
+.planBannerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editScheduleBtn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.4);
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.editScheduleBtn:hover {
+  border-color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.7);
+}
+
+/* Schedule Editor */
+.scheduleOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+}
+
+.scheduleDrawer {
+  width: 100%;
+  background: #0d1422;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 0 32px;
+  animation: slideUp 0.22s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.scheduleHandle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.scheduleHeader {
+  padding: 0 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 4px;
+}
+
+.scheduleTitle {
+  display: block;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.3px;
+}
+
+.scheduleSubtitle {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-top: 2px;
+}
+
+.scheduleRows {
+  padding: 4px 20px;
+}
+
+.scheduleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.scheduleDayName {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  width: 90px;
+}
+
+.scheduleSelect {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
+  padding: 6px 10px;
+  outline: none;
+  cursor: pointer;
+  min-width: 130px;
+  transition: border-color 0.2s;
+}
+
+.scheduleSelect:focus {
+  border-color: rgba(0,229,255,0.4);
+}
+
+.scheduleSaveBtn {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 16px 20px 0;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  color: #000;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.scheduleSaveBtn:hover {
+  opacity: 0.85;
+}
+
 /* Calendar */
 .calendar {
   padding: 10px 12px 6px;

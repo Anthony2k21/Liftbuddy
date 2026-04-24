@@ -29,15 +29,32 @@ async function loadActivePlan(userId) {
   return plans.find(p => p.id === selectedId) || null
 }
 
-// Returns the schedule block for a given date string, or null if rest day
-function getPlanDayForDate(dateStr, plan) {
+const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+// Returns the schedule block for a given date, or null if rest day.
+// weekAssignment maps dowMon (0=Mon…6=Sun) → schedule block index or null.
+function getPlanDayForDate(dateStr, plan, weekAssignment) {
   if (!plan || !plan.schedule || !plan.schedule.length) return null
-  const dowSun = new Date(dateStr + 'T00:00:00').getDay() // 0=Sun
-  const dowMon = (dowSun + 6) % 7                          // Mon=0…Sun=6
+  const dowSun = new Date(dateStr + 'T00:00:00').getDay()
+  const dowMon = (dowSun + 6) % 7
+
+  if (weekAssignment) {
+    const blockIdx = weekAssignment[dowMon]
+    if (blockIdx == null) return null
+    return plan.schedule[blockIdx] ?? null
+  }
+
   const workoutDays = WORKOUT_DAYS_BY_FREQ[plan.daysPerWeek] || []
   const idx = workoutDays.indexOf(dowMon)
   if (idx === -1) return null
   return plan.schedule[idx % plan.schedule.length]
+}
+
+function buildDefaultAssignment(plan) {
+  const assignment = { 0: null, 1: null, 2: null, 3: null, 4: null, 5: null, 6: null }
+  const workoutDays = WORKOUT_DAYS_BY_FREQ[plan.daysPerWeek] || []
+  workoutDays.forEach((dow, i) => { assignment[dow] = i % plan.schedule.length })
+  return assignment
 }
 
 function calcStreak(calendar) {
@@ -178,7 +195,10 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
   const [boards, setBoards]         = useState(() => {
     try { return JSON.parse(localStorage.getItem('workoutBoards') || '[]') } catch { return [] }
   })
-  const [activePlan, setActivePlan] = useState(null)
+  const [activePlan, setActivePlan]           = useState(null)
+  const [weekAssignment, setWeekAssignment]   = useState(null)
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false)
+  const [draftAssignment, setDraftAssignment] = useState(null)
   const [tracker, setTracker]       = useState({})
   const [calendar, setCalendar]     = useState({})
   const [loggedDates, setLoggedDates] = useState(new Set())
@@ -189,7 +209,13 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
   // Load from Supabase on mount / userId change
   useEffect(() => {
     if (!userId) return
-    loadActivePlan(userId).then(setActivePlan)
+    loadActivePlan(userId).then(plan => {
+      setActivePlan(plan)
+      if (plan) {
+        const saved = localStorage.getItem(`weekAssignment_${plan.id}`)
+        setWeekAssignment(saved ? JSON.parse(saved) : buildDefaultAssignment(plan))
+      }
+    })
     getMuscleCalendar(userId).then(setCalendar)
     getWorkoutHistory(userId).then(history => {
       setLoggedDates(new Set(history.map(h => h.date.slice(0, 10))))
@@ -344,7 +370,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
     else setCalMonth(m => m + 1)
   }
 
-  const todayPlanDay = getPlanDayForDate(viewDate, activePlan)
+  const todayPlanDay = getPlanDayForDate(viewDate, activePlan, weekAssignment)
   const streak = calcStreak(calendar)
 
   // Filter chart to only show exercises scheduled for the selected day
@@ -379,11 +405,19 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
           className={styles.planBanner}
           style={{ borderLeftColor: activePlan.color }}
         >
-          <span className={styles.planBannerName}>{activePlan.name}</span>
-          {todayPlanDay
-            ? <span className={styles.planBannerDay} style={{ color: activePlan.color }}>{todayPlanDay.day} Day</span>
-            : <span className={styles.planBannerRest}>Rest Day</span>
-          }
+          <div className={styles.planBannerLeft}>
+            <span className={styles.planBannerName}>{activePlan.name}</span>
+            {todayPlanDay
+              ? <span className={styles.planBannerDay} style={{ color: activePlan.color }}>{todayPlanDay.day} Day</span>
+              : <span className={styles.planBannerRest}>Rest Day</span>
+            }
+          </div>
+          <button
+            className={styles.editScheduleBtn}
+            onClick={() => { setDraftAssignment({ ...weekAssignment }); setShowScheduleEditor(true) }}
+          >
+            Edit Schedule
+          </button>
         </div>
       )}
 
@@ -408,7 +442,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
             const isFutureDay = dateStr > TODAY
             const muscles = calendar[dateStr]
             const trainedMuscles = muscles ? Object.entries(muscles).filter(([, v]) => v !== 'rest') : []
-            const planBlock = getPlanDayForDate(dateStr, activePlan)
+            const planBlock = getPlanDayForDate(dateStr, activePlan, weekAssignment)
             const hasWeights = loggedDates.has(dateStr)
             return (
               <button
@@ -585,6 +619,50 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
       <div className={styles.chartSection}>
         <WeightProgressChart userId={userId} filterExercises={dayExerciseNames} />
       </div>
+
+      {showScheduleEditor && activePlan && (
+        <div className={styles.scheduleOverlay} onClick={() => setShowScheduleEditor(false)}>
+          <div className={styles.scheduleDrawer} onClick={e => e.stopPropagation()}>
+            <div className={styles.scheduleHandle} />
+            <div className={styles.scheduleHeader}>
+              <span className={styles.scheduleTitle}>Edit Weekly Schedule</span>
+              <span className={styles.scheduleSubtitle}>{activePlan.name}</span>
+            </div>
+            <div className={styles.scheduleRows}>
+              {DAYS_OF_WEEK.map((dayName, i) => (
+                <div key={i} className={styles.scheduleRow}>
+                  <span className={styles.scheduleDayName}>{dayName}</span>
+                  <select
+                    className={styles.scheduleSelect}
+                    style={{ borderColor: draftAssignment?.[i] != null ? activePlan.color + '88' : undefined }}
+                    value={draftAssignment?.[i] ?? ''}
+                    onChange={e => setDraftAssignment(prev => ({
+                      ...prev,
+                      [i]: e.target.value === '' ? null : Number(e.target.value),
+                    }))}
+                  >
+                    <option value="">Rest</option>
+                    {activePlan.schedule.map((block, idx) => (
+                      <option key={idx} value={idx}>{block.day}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <button
+              className={styles.scheduleSaveBtn}
+              style={{ background: activePlan.color }}
+              onClick={() => {
+                setWeekAssignment(draftAssignment)
+                localStorage.setItem(`weekAssignment_${activePlan.id}`, JSON.stringify(draftAssignment))
+                setShowScheduleEditor(false)
+              }}
+            >
+              Save Schedule
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
