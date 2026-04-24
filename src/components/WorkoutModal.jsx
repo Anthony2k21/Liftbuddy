@@ -17,12 +17,25 @@ function makeExercise(name) {
   return { exercise: name, sets: '3', reps: '8–10', weight: '' }
 }
 
-export function WorkoutModal({ muscleGroup, onSave, onClose }) {
+function normalizeReps(r) {
+  if (!r) return '8–10'
+  const n = String(r).replace('-', '–')
+  return REP_RANGES.includes(n) ? n : '8–10'
+}
+
+export function WorkoutModal({ muscleGroup, onSave, onClose, initialSets }) {
   const exercises = EXERCISES[muscleGroup] || []
 
-  const [entries, setEntries] = useState([
-    makeExercise(exercises[0] || '')
-  ])
+  const [entries, setEntries] = useState(() =>
+    initialSets?.length
+      ? initialSets.map(s => ({
+          exercise: s.exercise || exercises[0] || '',
+          sets:     SET_RANGES.includes(String(s.sets)) ? String(s.sets) : '3',
+          reps:     normalizeReps(s.reps),
+          weight:   s.weight || '',
+        }))
+      : [makeExercise(exercises[0] || '')]
+  )
 
   function addExercise() {
     setEntries(prev => [...prev, makeExercise(exercises[0] || '')])
@@ -60,7 +73,7 @@ export function WorkoutModal({ muscleGroup, onSave, onClose }) {
         {/* Header */}
         <div className={styles.header}>
           <div>
-            <div className={styles.tag}>LOG WORKOUT</div>
+            <div className={styles.tag}>{initialSets ? 'EDIT WORKOUT' : 'LOG WORKOUT'}</div>
             <h2 className={styles.title}>{muscleGroup.toUpperCase()}</h2>
           </div>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
@@ -78,6 +91,9 @@ export function WorkoutModal({ muscleGroup, onSave, onClose }) {
                   value={entry.exercise}
                   onChange={e => updateExerciseName(ei, e.target.value)}
                 >
+                  {!exercises.includes(entry.exercise) && (
+                    <option value={entry.exercise}>{entry.exercise}</option>
+                  )}
                   {exercises.map(ex => (
                     <option key={ex} value={ex}>{ex}</option>
                   ))}
