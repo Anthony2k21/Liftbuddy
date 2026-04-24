@@ -28,7 +28,30 @@ function getWeekKey(dateStr) {
   return mon.toISOString().slice(0, 10)
 }
 
-// How many consecutive past sessions for this exercise had a lower weight than the one before
+// Count consecutive days with any logged session up to and including today
+function calcStreak(history, today) {
+  const dates = new Set(history.map(s => s.date))
+  dates.add(today) // today is being logged right now
+  let streak = 0
+  const d = new Date(today + 'T00:00:00')
+  while (dates.has(d.toISOString().slice(0, 10))) {
+    streak++
+    d.setDate(d.getDate() - 1)
+  }
+  return streak
+}
+
+// Bonus points for streak — capped at +1.0 so it enhances but never inflates
+function streakBonus(streak) {
+  if (streak >= 30) return 1.0
+  if (streak >= 14) return 0.7
+  if (streak >= 7)  return 0.5
+  if (streak >= 4)  return 0.3
+  if (streak >= 2)  return 0.15
+  return 0
+}
+
+
 function consecutiveDeclinesForExercise(exerciseName, history) {
   const sessions = history
     .filter(s => s.sets?.some(e => e.exercise === exerciseName))
@@ -200,15 +223,22 @@ export function calculateSessionRating(sessionData, history) {
   const completionPct = withWeight / todayExercises.length
   const completionScore = 5.0 + completionPct * 5.0
 
+  // ── 5. STREAK BONUS ──────────────────────────────────────────────────────
+  const streak = calcStreak(history || [], today)
+  const bonus  = streakBonus(streak)
+
   // ── FINAL SCORE ──────────────────────────────────────────────────────────
   const raw   = weightScore * 0.4 + volumeScore * 0.3 + prScore * 0.2 + completionScore * 0.1
-  const score = Math.max(1.0, Math.min(10.0, Math.round(raw * 10) / 10))
+  const score = Math.max(1.0, Math.min(10.0, Math.round((raw + bonus) * 10) / 10))
   const label = getLabel(score)
 
   // ── HIGHLIGHTS & LOWLIGHTS ───────────────────────────────────────────────
   const highlights = []
   const lowlights  = []
 
+  if (streak >= 2) {
+    highlights.push(`${streak}-day streak — +${bonus.toFixed(1)} bonus`)
+  }
   if (prCount > 0) {
     highlights.push(`${prCount} personal record${prCount > 1 ? 's' : ''} broken — ${prNames.join(', ')}`)
   }
