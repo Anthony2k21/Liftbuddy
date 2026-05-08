@@ -23,10 +23,6 @@ export function Settings({
   onToggleMusic,
   showModel,
   onToggleModel,
-  showSessionBoard,
-  onToggleSessionBoard,
-  showWorkoutBoard,
-  onToggleWorkoutBoard,
   onResetToday,
   signOut,
 }) {
@@ -113,25 +109,7 @@ export function Settings({
             </button>
           </div>
 
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Session log board</span>
-            <button
-              className={`${styles.toggle} ${showSessionBoard ? styles.toggleOn : ''}`}
-              onClick={onToggleSessionBoard}
-            >
-              <span className={styles.toggleKnob} />
-            </button>
-          </div>
 
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Workout log board</span>
-            <button
-              className={`${styles.toggle} ${showWorkoutBoard ? styles.toggleOn : ''}`}
-              onClick={onToggleWorkoutBoard}
-            >
-              <span className={styles.toggleKnob} />
-            </button>
-          </div>
         </section>
 
         <div className={styles.divider} />

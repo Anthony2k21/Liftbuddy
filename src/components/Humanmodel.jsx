@@ -148,8 +148,8 @@ useEffect(() => {
 
       <group
         ref={groupRef}
-        position={[0, -1.07, -0.8]}
-        scale={0.7}
+        position={[0, -1.07, -1.4]}
+        scale={0.85}
       >
         <primitive object={scene} />
         {/* Invisible click proxy covering the full body */}
@@ -160,13 +160,13 @@ useEffect(() => {
       </group>
 
       {/* Solid floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.07, -1.5]} receiveShadow>
-        <planeGeometry args={[10, 10]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.07, -0.5]} receiveShadow>
+        <planeGeometry args={[4, 4]} />
         <meshBasicMaterial color={0x000000} />
       </mesh>
 
       {/* Vibrant grid */}
-      <gridHelper args={[10, 20, 0xffffff, 0x444444]} position={[0, -1.065, -1.5]} />
+      <gridHelper args={[4, 10, 0xffffff, 0x444444]} position={[0, -1.065, -0.5]} />
 
       {/* Circular glow spot under model */}
       <mesh ref={glowRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.06, -0.5]}>

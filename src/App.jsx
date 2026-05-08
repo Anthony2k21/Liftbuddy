@@ -1,13 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { HumanModel } from './components/Humanmodel'
 import { WorkoutModal } from './components/WorkoutModal'
-import { FlatBench } from './components/flat_bench'
-import { PullUpBar } from './components/pull_up_bar'
-import { BoxingBag } from './components/boxing_bag'
 import { TabBar } from './components/TabBar'
-import { InfoBoard } from './components/InfoBoard'
-import { WorkoutLogBoard } from './components/WorkoutLogBoard'
 import { WorkoutLog } from './components/WorkoutLog'
 import { DailyTracker } from './components/DailyTracker'
 import { Progress } from './pages/Progress'
@@ -15,10 +10,8 @@ import { Settings } from './components/Settings'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
-import { getMuscleCalendar, saveMuscleDay, saveSessionRating } from './lib/db'
+import { getMuscleCalendar, saveMuscleDay, saveSessionRating, getSelectedPlanId, getWorkoutPlans } from './lib/db'
 import { calculateSessionRating } from './utils/calculateSessionRating'
-// import { GymFloor } from './components/GymFloor'
-// import { GymWall } from './components/GymWall'
 import './index.css'
 import styles from './App.module.css'
 
@@ -47,7 +40,6 @@ function maxLevel(a, b) {
   return LEVEL_RANK[a] >= LEVEL_RANK[b] ? a : b
 }
 
-// Aggregate max intensity per muscle from Monday through today
 function computeWeeklyDisplay(calendar, todayData) {
   const today       = new Date()
   const dayOfWeek   = today.getDay()
@@ -64,6 +56,47 @@ function computeWeeklyDisplay(calendar, todayData) {
   }
   return result
 }
+
+function fmtVolume(v) {
+  if (v >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+  return v > 0 ? String(v) : '0'
+}
+
+function inferWorkoutType(exercises) {
+  if (!exercises?.length) return null
+  const names = exercises.map(e => (e.exercise || '').toLowerCase()).join(' ')
+  if (/squat|lunge|leg press|romanian|hamstring|quad|glute/.test(names)) return 'LEG DAY'
+  if (/deadlift|row|pull.?up|pulldown|curl|chin/.test(names)) return 'PULL DAY'
+  if (/bench|press|fly|dip|push.?up|overhead|lateral/.test(names)) return 'PUSH DAY'
+  return null
+}
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+// ── Stat icons ────────────────────────────────────────────────────────────────
+
+const IconFlame = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/>
+  </svg>
+)
+
+const IconBars = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+    <rect x="4" y="12" width="4" height="8"/>
+    <rect x="10" y="7" width="4" height="13"/>
+    <rect x="16" y="4" width="4" height="16"/>
+  </svg>
+)
+
+const IconClock = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <circle cx="12" cy="12" r="9"/>
+    <polyline points="12 7 12 12 15 14"/>
+  </svg>
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const { session, user, signOut } = useAuth()
@@ -83,17 +116,83 @@ export default function App() {
 
 
 function AppInner({ userName, userEmail, userId, signOut }) {
-  const [muscleData, setMuscleData]         = useState(INITIAL_MUSCLE_DATA)
-  const [weekDisplayData, setWeekDisplayData]   = useState(INITIAL_MUSCLE_DATA)
-  const [sessionData, setSessionData]       = useState({})
-  const [activeModal, setActiveModal]       = useState(null)
-  const { logSession, history }             = useWorkoutHistory(userId)
+  const [muscleData, setMuscleData]           = useState(INITIAL_MUSCLE_DATA)
+  const [weekDisplayData, setWeekDisplayData] = useState(INITIAL_MUSCLE_DATA)
+  const [sessionData, setSessionData]         = useState({})
+  const [activeModal, setActiveModal]         = useState(null)
+  const { logSession, history }               = useWorkoutHistory(userId)
 
   const [displayName, setDisplayName] = useState(
     () => localStorage.getItem(`displayName_${userId}`) || userName
   )
 
-  // Load muscle state from Supabase on mount, build weekly display
+  // ── Plan data ──────────────────────────────────────────────────────────────
+  const [todayPlanInfo, setTodayPlanInfo] = useState(null)
+
+  useEffect(() => {
+    async function loadTodayPlan() {
+      try {
+        const selectedId = await getSelectedPlanId(userId)
+        if (!selectedId) { setTodayPlanInfo(null); return }
+        const plans = await getWorkoutPlans(userId)
+        const active = plans.find(p => p.id === selectedId)
+        if (!active) { setTodayPlanInfo(null); return }
+        const todayName = DAY_NAMES[new Date().getDay()]
+        const daySchedule = active.schedule?.find(s => s.day === todayName)
+        setTodayPlanInfo({
+          planName:  active.name,
+          dayName:   todayName,
+          exercises: daySchedule?.exercises || [],
+        })
+      } catch { setTodayPlanInfo(null) }
+    }
+    loadTodayPlan()
+    window.addEventListener('storage', loadTodayPlan)
+    return () => window.removeEventListener('storage', loadTodayPlan)
+  }, [userId])
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  const streak = useMemo(() => {
+    if (!history.length) return 0
+    const dateSet = new Set(history.map(h => h.date).filter(Boolean))
+    let count = 0
+    const today = new Date()
+    for (let i = 0; ; i++) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      if (dateSet.has(d.toISOString().slice(0, 10))) count++
+      else break
+    }
+    return count
+  }, [history])
+
+  const weeklyVolume = useMemo(() => {
+    const today = new Date()
+    const dow = today.getDay()
+    const mon = new Date(today)
+    mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1))
+    const mondayKey = mon.toISOString().slice(0, 10)
+    let vol = 0
+    for (const h of history) {
+      if (!h.date || h.date < mondayKey) continue
+      for (const s of (h.sets || [])) {
+        vol += (parseInt(s.sets) || 1) * (parseInt(s.reps) || 0) * (parseFloat(s.weight) || 0)
+      }
+    }
+    return vol
+  }, [history])
+
+  const lastWorkoutDays = useMemo(() => {
+    const dates = history.map(h => h.date).filter(Boolean).sort().reverse()
+    if (!dates.length) return null
+    const last = new Date(dates[0])
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    last.setHours(0, 0, 0, 0)
+    return Math.round((today - last) / 86400000)
+  }, [history])
+
+  // ── Muscle calendar ────────────────────────────────────────────────────────
   useEffect(() => {
     getMuscleCalendar(userId).then(calendar => {
       const today = calendar[todayKey()] || INITIAL_MUSCLE_DATA
@@ -102,81 +201,43 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     })
   }, [userId])
 
-  // Save muscle state to Supabase and refresh weekly display
   useEffect(() => {
     saveMuscleDay(userId, todayKey(), muscleData)
     getMuscleCalendar(userId).then(calendar => {
       setWeekDisplayData(computeWeeklyDisplay(calendar, muscleData))
     })
   }, [muscleData, userId])
-  const [activeTab, setActiveTab]     = useState('workout')
-  const [autoRotate, setAutoRotate]   = useState(true)
-  const [rotY, setRotY] = useState(0)
-  const [showArcUI, setShowArcUI]               = useState(false)
-  const [showSessionBoard, setShowSessionBoard] = useState(true)
-  const [showWorkoutBoard, setShowWorkoutBoard] = useState(true)
-  const [showModel, setShowModel]               = useState(true)
-  const [playing, setPlaying]                   = useState(false)
-  const [showSettings, setShowSettings]         = useState(false)
-  const audioRef                                = useRef(null)
-  const [animationNames, setAnimationNames]     = useState([])
-  const [activeAnimation, setActiveAnimation]   = useState(null)
-  const animInitialized                         = useRef(false)
 
-  const QUOTES = [
-    { text: "The only bad workout is the one that didn't happen.", author: "Unknown" },
-    { text: "Push yourself because no one else is going to do it for you.", author: "Unknown" },
-    { text: "Strength does not come from the body. It comes from the will.", author: "Unknown" },
-    { text: "The pain you feel today will be the strength you feel tomorrow.", author: "Unknown" },
-    { text: "Don't limit your challenges. Challenge your limits.", author: "Unknown" },
-    { text: "It never gets easier. You just get stronger.", author: "Unknown" },
-    { text: "Your body can stand almost anything. It's your mind you have to convince.", author: "Unknown" },
-    { text: "Success starts with self-discipline.", author: "Unknown" },
-    { text: "Train insane or remain the same.", author: "Unknown" },
-    { text: "Wake up. Work out. Look hot. Kick ass.", author: "Unknown" },
-    { text: "Sweat is just fat crying.", author: "Unknown" },
-    { text: "Be stronger than your excuses.", author: "Unknown" },
-  ]
-  const [quoteIdx, setQuoteIdx] = useState(() => Math.floor(Math.random() * 12))
+  // ── UI state ───────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab]   = useState('workout')
+  const [autoRotate, setAutoRotate] = useState(true)
+  const [rotY, setRotY]             = useState(0)
+  const [showArcUI, setShowArcUI]   = useState(false)
+  const [showModel, setShowModel]   = useState(true)
+  const [playing, setPlaying]       = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const audioRef                    = useRef(null)
+  const [animationNames, setAnimationNames] = useState([])
+  const [activeAnimation, setActiveAnimation] = useState(null)
+  const animInitialized             = useRef(false)
 
   useEffect(() => {
     if (!audioRef.current) return
-    if (playing) {
-      audioRef.current.play().catch(() => {})
-    } else {
-      audioRef.current.pause()
-    }
+    if (playing) audioRef.current.play().catch(() => {})
+    else audioRef.current.pause()
   }, [playing])
 
-  // Pick a random animation on load, then cycle every 12 seconds
   useEffect(() => {
     if (animationNames.length === 0 || animInitialized.current) return
     animInitialized.current = true
-
     const pick = (exclude) => {
-      const pool = exclude
-        ? animationNames.filter(n => n !== exclude)
-        : animationNames
-      return pool.length > 0
-        ? pool[Math.floor(Math.random() * pool.length)]
-        : animationNames[0]
+      const pool = exclude ? animationNames.filter(n => n !== exclude) : animationNames
+      return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : animationNames[0]
     }
-
     setActiveAnimation(pick())
-
-    const interval = setInterval(() => {
-      setActiveAnimation(prev => pick(prev))
-    }, 12000)
-
+    const interval = setInterval(() => setActiveAnimation(prev => pick(prev)), 12000)
     return () => clearInterval(interval)
   }, [animationNames])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setQuoteIdx(i => (i + 1) % QUOTES.length)
-    }, 18000)
-    return () => clearInterval(interval)
-  }, [QUOTES.length])
 
   const dragging    = useRef(false)
   const prevPos     = useRef({ x: 0, y: 0 })
@@ -186,25 +247,20 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     (new Date() - new Date(new Date().getFullYear(), 0, 1)) / 604800000
   )
 
-  function handleUpdateBoards(boards) {
-    const withIds = boards.map((b, i) => ({
-      ...b,
-      id: Date.now() + i,
-      open: i === 0,
-      exercises: b.exercises.map((e, j) => ({ ...e, id: j + 1 }))
-    }))
-    localStorage.setItem('workoutBoards', JSON.stringify(withIds))
-    window.dispatchEvent(new Event('storage'))
-  }
+  const todayDayName    = DAY_NAMES[new Date().getDay()].toUpperCase()
+  const workoutExercises = todayPlanInfo?.exercises || []
+  const workoutTitle    = inferWorkoutType(workoutExercises) || todayPlanInfo?.planName?.toUpperCase() || 'WORKOUT DAY'
+  const isRestDay       = workoutExercises.length === 0
+  const workoutMeta     = todayPlanInfo && !isRestDay
+    ? `${todayPlanInfo.planName.toUpperCase()} · ${workoutExercises.length} EXERCISES · ~${workoutExercises.length * 10} MIN`
+    : todayPlanInfo?.planName?.toUpperCase() || 'SET UP A PLAN IN PLANS TAB'
 
-  function handleCreatePlan(plan) {
-    const existing = JSON.parse(localStorage.getItem('workoutPlans') || '[]')
-    const newPlan = { ...plan, id: Date.now() }
-    localStorage.setItem('workoutPlans', JSON.stringify([...existing, newPlan]))
-    localStorage.setItem('selectedPlanId', JSON.stringify(newPlan.id))
-    window.dispatchEvent(new Event('storage'))
-  }
+  const activeMuscleLabels = Object.entries(weekDisplayData)
+    .filter(([, lvl]) => lvl !== 'rest')
+    .map(([m]) => m.toUpperCase())
+    .join(' · ')
 
+  // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleSave({ muscleGroup, sets }) {
     const newSessionData = { ...sessionData, [muscleGroup]: sets }
     setSessionData(newSessionData)
@@ -213,7 +269,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       [muscleGroup]: setsToLevel(sets.reduce((total, e) => total + parseInt(e.sets, 10), 0))
     }))
     logSession({ muscleGroup, sets })
-    // Auto-calculate and persist rating for every muscle group logged today
     const { score } = calculateSessionRating(newSessionData, history)
     const today = todayKey()
     Object.keys(newSessionData).forEach(mg => saveSessionRating(userId, today, mg, score))
@@ -223,7 +278,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     dragging.current = true
     prevPos.current  = {
       x: e.clientX ?? e.touches?.[0]?.clientX,
-      y: e.clientY ?? e.touches?.[0]?.clientY
+      y: e.clientY ?? e.touches?.[0]?.clientY,
     }
     setAutoRotate(false)
   }, [])
@@ -238,24 +293,24 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     setRotY(currentRotY.current)
   }, [])
 
-  const onPointerUp = useCallback(() => {
-    dragging.current = false
-  }, [])
+  const onPointerUp = useCallback(() => { dragging.current = false }, [])
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className={styles.app}>
-
       <audio ref={audioRef} src="/music.mp3" loop />
 
+      {/* ── HEADER ── */}
       <header className={styles.header}>
         <div className={styles.titleGroup}>
-          <h1 className={styles.title}>No1Assist</h1>
+          <div className={styles.wipSign}>
+            <span className={styles.wipIcon}>⚠</span>
+            <h1 className={styles.title}>Work In Progress</h1>
+          </div>
           <span className={styles.welcomeText}>Welcome back, {displayName}</span>
         </div>
         <div className={styles.headerRight}>
-          <span className={styles.weekLabel}>
-            Week {weekNum} · {new Date().getFullYear()}
-          </span>
+          <span className={styles.weekPill}>WK {weekNum} · {new Date().getFullYear()}</span>
           <button className={styles.settingsBtn} onClick={() => setShowSettings(true)} title="Settings">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -265,6 +320,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
         </div>
       </header>
 
+      {/* ── CANVAS + OVERLAYS ── */}
       <div
         className={styles.canvasWrap}
         onMouseDown={onPointerDown}
@@ -277,19 +333,10 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       >
         <Canvas
           shadows
-          camera={{ position: [0, 0, 2.5], fov: 40}}
+          camera={{ position: [0, 0, 2.5], fov: 40 }}
           gl={{ antialias: true, alpha: true }}
-          style={{ background: "transparent" }}
+          style={{ background: 'transparent' }}
         >
-          {/* <GymWall />
-          <GymFloor /> */}
-          <FlatBench position={[-1.1, -1.0, -2.7]} scale={0.75} />
-          <BoxingBag position={[-1.0, 0.0, -2.5]} scale={0.75} />
-          <PullUpBar
-            position={[1.0, -1.0, -2.5]}
-            scale={0.009}
-            rotation={[0, Math.PI / -4, 0]}
-          />
           {showModel && (
             <HumanModel
               muscleData={weekDisplayData}
@@ -300,53 +347,86 @@ function AppInner({ userName, userEmail, userId, signOut }) {
               onAnimationsLoaded={setAnimationNames}
             />
           )}
-          {showSessionBoard && (
-            <InfoBoard
-              sessionData={sessionData}
-              muscleData={weekDisplayData}
-              onEdit={setActiveModal}
-            />
-          )}
-          {showWorkoutBoard && <WorkoutLogBoard userId={userId} />}
         </Canvas>
 
         <div className={styles.scanlines} />
         <div className={styles.gradientTop} />
-        <div className={styles.gradientBottom} />
 
-        <div className={styles.quoteOverlay}>
-          <p key={quoteIdx} className={styles.quoteText}>"{QUOTES[quoteIdx].text}"</p>
+        {/* ── WORKOUT CARD + STATS ── */}
+        <div className={styles.topOverlay}>
+          <div className={styles.workoutCard}>
+            <div className={styles.workoutCardLeft}>
+              <span className={styles.workoutDayLabel}>TODAY · {todayDayName}</span>
+              <h2 className={styles.workoutTitle}>{workoutTitle}</h2>
+              <span className={styles.workoutMeta}>{workoutMeta}</span>
+            </div>
+            <button
+              className={styles.startBtn}
+              onMouseDown={e => e.stopPropagation()}
+              onClick={() => setActiveTab('tracker')}
+            >
+              {isRestDay ? 'LOG →' : 'START →'}
+            </button>
+          </div>
+
+          <div className={styles.statsRow}>
+            <div className={styles.statCell}>
+              <span className={styles.statVal}>{streak}</span>
+              <span className={styles.statLbl}><IconFlame /> DAY STREAK</span>
+            </div>
+            <div className={styles.statDivider} />
+            <div className={styles.statCell}>
+              <span className={styles.statVal}>{fmtVolume(weeklyVolume)}</span>
+              <span className={styles.statLbl}><IconBars /> VOL THIS WK</span>
+            </div>
+            <div className={styles.statDivider} />
+            <div className={styles.statCell}>
+              <span className={styles.statVal}>{lastWorkoutDays !== null ? `${lastWorkoutDays}D` : '—'}</span>
+              <span className={styles.statLbl}><IconClock /> LAST PUSH</span>
+            </div>
+          </div>
         </div>
 
+        {/* ── LEGEND (right side) ── */}
+        <div className={styles.legend}>
+          {[
+            { cls: styles.dotHigh, label: 'HIGH' },
+            { cls: styles.dotMed,  label: 'MED'  },
+            { cls: styles.dotLow,  label: 'LOW'  },
+            { cls: styles.dotRest, label: 'REST' },
+          ].map(({ cls, label }) => (
+            <div key={label} className={styles.legendItem}>
+              <div className={`${styles.dot} ${cls}`} />
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* ── MUSCLE TAGS BAR ── */}
+        <div className={styles.muscleTagsBar}>
+          {activeMuscleLabels || 'REST DAY'}
+        </div>
+
+        {/* ── ARC UI ── */}
         {showArcUI && (
           <div className={styles.arcOverlay} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
             {Object.keys(INITIAL_MUSCLE_DATA).map((group) => {
-              // Front muscles arc on the left, other muscles arc on the right
               const leftGroups  = ['shoulders', 'chest', 'abs']
               const rightGroups = ['arms', 'back', 'legs']
-              const leftAngles  = [225, 195, 160]   // upper-left → lower-left
-              const rightAngles = [315, 345, 20]    // upper-right → lower-right
+              const leftAngles  = [225, 195, 160]
+              const rightAngles = [315, 345, 20]
               const radius = 120
-
               let angle
-              if (leftGroups.includes(group)) {
-                angle = leftAngles[leftGroups.indexOf(group)]
-              } else {
-                angle = rightAngles[rightGroups.indexOf(group)]
-              }
-
+              if (leftGroups.includes(group)) angle = leftAngles[leftGroups.indexOf(group)]
+              else angle = rightAngles[rightGroups.indexOf(group)]
               const rad = (angle * Math.PI) / 180
-              const x   = radius * Math.cos(rad)
-              const y   = radius * Math.sin(rad)
-
               return (
                 <button
                   key={group}
                   className={`${styles.arcItem} ${styles.muscleBtn}`}
                   style={{
-                    left: `calc(50% + ${x}px)`,
-                    top:  `calc(25% + ${y}px)`,
-                    animationDelay: `0ms`,
+                    left: `calc(50% + ${radius * Math.cos(rad)}px)`,
+                    top:  `calc(25% + ${radius * Math.sin(rad)}px)`,
                   }}
                   onClick={() => setActiveModal(group)}
                 >
@@ -357,48 +437,15 @@ function AppInner({ userName, userEmail, userId, signOut }) {
           </div>
         )}
 
-        {/* Legend */}
-        <div className={styles.legend}>
-          {[
-            { cls: styles.dotHigh, label: 'High' },
-            { cls: styles.dotMed,  label: 'Med'  },
-            { cls: styles.dotLow,  label: 'Low'  },
-            { cls: styles.dotRest, label: 'Rest' },
-          ].map(({ cls, label }) => (
-            <div key={label} className={styles.legendItem}>
-              <div className={`${styles.dot} ${cls}`} />
-              {label}
-            </div>
-          ))}
-        </div>
-
- 
-
-<div className={styles.boardToggles}>
-          <button
-            className={`${styles.boardToggleBtn} ${showSessionBoard ? styles.boardToggleActive : ''}`}
-            onClick={e => { e.stopPropagation(); setShowSessionBoard(v => !v) }}
-          >
-            SESSION LOG
-          </button>
-          <button
-            className={`${styles.boardToggleBtn} ${showWorkoutBoard ? styles.boardToggleActive : ''}`}
-            onClick={e => { e.stopPropagation(); setShowWorkoutBoard(v => !v) }}
-          >
-            WORKOUT LOG
-          </button>
-        </div>
-
         {autoRotate && (
           <div className={styles.hint}>
             <div className={styles.hintIcon}>↻</div>
-            Drag to rotate · Tap muscle to log
+            Drag to rotate · Tap model to log
           </div>
         )}
-
-
       </div>
 
+      {/* ── MODALS ── */}
       {activeModal && (
         <WorkoutModal
           muscleGroup={activeModal}
@@ -453,10 +500,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
         onToggleMusic={() => setPlaying(v => !v)}
         showModel={showModel}
         onToggleModel={() => setShowModel(v => !v)}
-        showSessionBoard={showSessionBoard}
-        onToggleSessionBoard={() => setShowSessionBoard(v => !v)}
-        showWorkoutBoard={showWorkoutBoard}
-        onToggleWorkoutBoard={() => setShowWorkoutBoard(v => !v)}
         onResetToday={() => {
           setMuscleData(INITIAL_MUSCLE_DATA)
           setSessionData({})
@@ -465,7 +508,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       />
 
       <TabBar activeTab={activeTab} onChange={setActiveTab} />
-
     </div>
   )
 }
