@@ -265,7 +265,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
         onSessionUpdate(muscleGroup, sets, viewDate)
       }
     } else if (activePlan && boardId.startsWith('plan_')) {
-      const planDay = getPlanDayForDate(viewDate, activePlan)
+      const planDay = getPlanDayForDate(viewDate, activePlan, weekAssignment)
       if (planDay) {
         const dayFallback = PLAN_DAY_TO_MUSCLE[planDay.day.toLowerCase()] ?? 'chest'
         const byMuscle = {}
@@ -323,7 +323,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
         }))
       onSessionUpdate(muscleGroup, sets, viewDate)
     } else if (activePlan && boardId.startsWith('plan_')) {
-      const planDay = getPlanDayForDate(viewDate, activePlan)
+      const planDay = getPlanDayForDate(viewDate, activePlan, weekAssignment)
       if (!planDay) return
       const dayFallback = PLAN_DAY_TO_MUSCLE[planDay.day.toLowerCase()] ?? 'chest'
       const byMuscle = {}

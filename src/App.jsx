@@ -12,6 +12,7 @@ import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { getMuscleCalendar, saveMuscleDay, saveSessionRating, getSelectedPlanId, getWorkoutPlans } from './lib/db'
 import { calculateSessionRating } from './utils/calculateSessionRating'
+import { WorkoutMode } from './pages/WorkoutMode'
 import './index.css'
 import styles from './App.module.css'
 
@@ -72,6 +73,11 @@ function inferWorkoutType(exercises) {
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+// Plan exercises use `name`; WorkoutMode expects `exercise`. Normalise at the boundary.
+function normalizeExercises(exs) {
+  return (exs || []).map(ex => ({ ...ex, exercise: ex.exercise || ex.name || '' }))
+}
 
 // ── Stat icons ────────────────────────────────────────────────────────────────
 
@@ -137,12 +143,29 @@ function AppInner({ userName, userEmail, userId, signOut }) {
         const plans = await getWorkoutPlans(userId)
         const active = plans.find(p => p.id === selectedId)
         if (!active) { setTodayPlanInfo(null); return }
-        const todayName = DAY_NAMES[new Date().getDay()]
-        const daySchedule = active.schedule?.find(s => s.day === todayName)
+
+        // Use weekAssignment-aware lookup (same logic as DailyTracker)
+        const todayStr = todayKey()
+        const dowMon = (new Date(todayStr + 'T00:00:00').getDay() + 6) % 7
+        const FREQ_MAP = { 1:[0],2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4],6:[0,1,2,3,4,5],7:[0,1,2,3,4,5,6] }
+        let daySchedule = null
+        if (active.schedule?.length) {
+          const wa = active.weekAssignment
+          if (wa) {
+            const idx = wa[dowMon]
+            if (idx != null) daySchedule = active.schedule[idx] ?? null
+          } else {
+            const days = FREQ_MAP[active.daysPerWeek] || []
+            const i = days.indexOf(dowMon)
+            if (i !== -1) daySchedule = active.schedule[i % active.schedule.length]
+          }
+        }
+
         setTodayPlanInfo({
-          planName:  active.name,
-          dayName:   todayName,
-          exercises: daySchedule?.exercises || [],
+          planId:      active.id,
+          planName:    active.name,
+          exercises:   normalizeExercises(daySchedule?.exercises || []),
+          allSchedule: active.schedule || [],
         })
       } catch { setTodayPlanInfo(null) }
     }
@@ -207,6 +230,10 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       setWeekDisplayData(computeWeeklyDisplay(calendar, muscleData))
     })
   }, [muscleData, userId])
+
+  // ── Workout mode ───────────────────────────────────────────────────────────
+  const [workoutModeData, setWorkoutModeData] = useState(null)
+  const [showDayPicker, setShowDayPicker] = useState(false)
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab]   = useState('workout')
@@ -363,9 +390,21 @@ function AppInner({ userName, userEmail, userId, signOut }) {
             <button
               className={styles.startBtn}
               onMouseDown={e => e.stopPropagation()}
-              onClick={() => setActiveTab('tracker')}
+              onClick={() => {
+                if (!isRestDay && workoutExercises.length > 0) {
+                  setWorkoutModeData({
+                    planId: todayPlanInfo?.planId || null,
+                    exercises: workoutExercises,
+                    dayLabel: workoutTitle.endsWith(' DAY') ? workoutTitle : workoutTitle + ' DAY',
+                  })
+                } else if (todayPlanInfo?.allSchedule?.length > 0) {
+                  setShowDayPicker(true)
+                } else {
+                  setActiveTab('tracker')
+                }
+              }}
             >
-              {isRestDay ? 'LOG →' : 'START →'}
+              {isRestDay ? 'TRAIN ANYWAY →' : 'START →'}
             </button>
           </div>
 
@@ -508,6 +547,77 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       />
 
       <TabBar activeTab={activeTab} onChange={setActiveTab} />
+
+      {showDayPicker && todayPlanInfo && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex', alignItems: 'flex-end',
+          }}
+          onClick={() => setShowDayPicker(false)}
+        >
+          <div
+            style={{
+              width: '100%', background: '#111114',
+              borderTop: '1px solid #2a2a32',
+              borderRadius: '20px 20px 0 0',
+              padding: '20px 20px 40px',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ width: 36, height: 4, background: '#2a2a32', borderRadius: 2, margin: '0 auto 20px' }} />
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.1rem', letterSpacing: '0.1em', color: '#f4f4f6', marginBottom: 4 }}>
+              PICK A WORKOUT
+            </div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', letterSpacing: '1.5px', color: '#8a8a92', marginBottom: 16 }}>
+              {todayPlanInfo.planName?.toUpperCase()} · CHOOSE A DAY TO TRAIN
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(todayPlanInfo.allSchedule || []).map((block, i) => (
+                <button
+                  key={i}
+                  style={{
+                    width: '100%', padding: '14px 16px',
+                    background: '#16161a', border: '1px solid #2a2a32',
+                    borderRadius: 10, cursor: 'pointer',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    textAlign: 'left',
+                  }}
+                  onClick={() => {
+                    setShowDayPicker(false)
+                    setWorkoutModeData({
+                      planId: todayPlanInfo.planId || null,
+                      exercises: normalizeExercises(block.exercises),
+                      dayLabel: block.day.toUpperCase() + ' DAY',
+                    })
+                  }}
+                >
+                  <div>
+                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1rem', letterSpacing: '0.1em', color: '#f4f4f6' }}>
+                      {block.day.toUpperCase()}
+                    </div>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.6rem', letterSpacing: '1px', color: '#8a8a92', marginTop: 2 }}>
+                      {block.exercises.length} EXERCISES
+                    </div>
+                  </div>
+                  <span style={{ color: '#b8ff3a', fontSize: '1rem' }}>→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {workoutModeData && (
+        <WorkoutMode
+          userId={userId}
+          planId={workoutModeData.planId}
+          exercises={workoutModeData.exercises}
+          dayLabel={workoutModeData.dayLabel}
+          onExit={() => setWorkoutModeData(null)}
+        />
+      )}
     </div>
   )
 }

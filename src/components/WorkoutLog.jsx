@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './WorkoutLog.module.css'
-import { getWorkoutPlans, createWorkoutPlan, deleteWorkoutPlan, getSelectedPlanId, saveSelectedPlanId } from '../lib/db'
+import { getWorkoutPlans, createWorkoutPlan, updateWorkoutPlan, deleteWorkoutPlan, getSelectedPlanId, saveSelectedPlanId } from '../lib/db'
 
 const ACCENT_COLORS = [
   '#4f6cff','#00e5c8','#a56bff','#ff6bae',
@@ -102,6 +102,11 @@ export function WorkoutLog({ userId }) {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError,   setAiError]   = useState('')
 
+  // Schedule editor
+  const [editingPlan, setEditingPlan] = useState(null) // plan object being edited
+  const [editSchedule, setEditSchedule] = useState([]) // draft schedule
+  const [schedSaving, setSchedSaving] = useState(false)
+
   // Load plans and selected plan from Supabase on mount
   // If user has no plans yet, seed the defaults into Supabase so IDs are real
   useEffect(() => {
@@ -188,6 +193,69 @@ export function WorkoutLog({ userId }) {
     }
   }
 
+  // ── SCHEDULE EDITOR ────────────────────────────────────────────────────────
+
+  function openScheduleEditor(plan, e) {
+    e.stopPropagation()
+    setEditingPlan(plan)
+    setEditSchedule(plan.schedule.map(block => ({
+      day: block.day,
+      exercises: block.exercises.map(ex => ({ ...ex })),
+    })))
+  }
+
+  function updateDayLabel(dayIdx, value) {
+    setEditSchedule(prev => prev.map((b, i) => i === dayIdx ? { ...b, day: value } : b))
+  }
+
+  function updateExField(dayIdx, exIdx, field, value) {
+    setEditSchedule(prev => prev.map((b, i) =>
+      i !== dayIdx ? b : {
+        ...b,
+        exercises: b.exercises.map((ex, j) => j === exIdx ? { ...ex, [field]: value } : ex),
+      }
+    ))
+  }
+
+  function addExercise(dayIdx) {
+    setEditSchedule(prev => prev.map((b, i) =>
+      i !== dayIdx ? b : {
+        ...b,
+        exercises: [...b.exercises, { name: '', sets: 3, reps: '8-10' }],
+      }
+    ))
+  }
+
+  function removeExercise(dayIdx, exIdx) {
+    setEditSchedule(prev => prev.map((b, i) =>
+      i !== dayIdx ? b : {
+        ...b,
+        exercises: b.exercises.filter((_, j) => j !== exIdx),
+      }
+    ))
+  }
+
+  function addDay() {
+    setEditSchedule(prev => [...prev, { day: `Day ${prev.length + 1}`, exercises: [] }])
+  }
+
+  function removeDay(dayIdx) {
+    setEditSchedule(prev => prev.filter((_, i) => i !== dayIdx))
+  }
+
+  async function saveSchedule() {
+    if (!editingPlan) return
+    setSchedSaving(true)
+    const ok = await updateWorkoutPlan(userId, editingPlan.id, { schedule: editSchedule })
+    if (ok) {
+      setPlans(prev => prev.map(p =>
+        p.id === editingPlan.id ? { ...p, schedule: editSchedule } : p
+      ))
+      setEditingPlan(null)
+    }
+    setSchedSaving(false)
+  }
+
   // ── RENDER ──
   return (
     <div className={styles.wrap}>
@@ -233,6 +301,7 @@ export function WorkoutLog({ userId }) {
                   >
                     {selectedPlanId === plan.id ? '✓' : '○'}
                   </button>
+                  <button className={styles.planEditBtn} onClick={e => openScheduleEditor(plan, e)} title="Edit schedule">✎</button>
                   <button className={styles.planDeleteBtn} onClick={e => deletePlan(plan.id, e)}>✕</button>
                   <span className={`${styles.toggle} ${isOpen ? styles.toggleOpen : ''}`}>▾</span>
                 </div>
@@ -285,6 +354,74 @@ export function WorkoutLog({ userId }) {
           )}
         </div>
       </div>
+
+      {/* ── SCHEDULE EDITOR MODAL ── */}
+      {editingPlan && (
+        <div className={styles.modalBackdrop} onClick={() => !schedSaving && setEditingPlan(null)}>
+          <div className={`${styles.modalBox} ${styles.scheduleModal}`} onClick={e => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Edit Schedule · {editingPlan.name}</h3>
+
+            <div className={styles.scheduleEditor}>
+              {editSchedule.map((block, dayIdx) => (
+                <div key={dayIdx} className={styles.schedDay}>
+                  <div className={styles.schedDayHeader}>
+                    <input
+                      className={`${styles.input} ${styles.schedDayInput}`}
+                      value={block.day}
+                      onChange={e => updateDayLabel(dayIdx, e.target.value)}
+                      placeholder="Day label (e.g. Push)"
+                    />
+                    <button className={styles.schedRemoveDay} onClick={() => removeDay(dayIdx)}>✕</button>
+                  </div>
+
+                  {block.exercises.map((ex, exIdx) => (
+                    <div key={exIdx} className={styles.schedExRow}>
+                      <input
+                        className={`${styles.input} ${styles.schedExName}`}
+                        value={ex.name}
+                        onChange={e => updateExField(dayIdx, exIdx, 'name', e.target.value)}
+                        placeholder="Exercise name"
+                      />
+                      <input
+                        className={`${styles.input} ${styles.schedExSmall}`}
+                        type="number"
+                        min="1"
+                        value={ex.sets}
+                        onChange={e => updateExField(dayIdx, exIdx, 'sets', Number(e.target.value))}
+                        placeholder="Sets"
+                      />
+                      <input
+                        className={`${styles.input} ${styles.schedExSmall}`}
+                        value={ex.reps}
+                        onChange={e => updateExField(dayIdx, exIdx, 'reps', e.target.value)}
+                        placeholder="Reps"
+                      />
+                      <button className={styles.schedRemoveEx} onClick={() => removeExercise(dayIdx, exIdx)}>✕</button>
+                    </div>
+                  ))}
+
+                  <button className={styles.schedAddEx} onClick={() => addExercise(dayIdx)}>
+                    + Add Exercise
+                  </button>
+                </div>
+              ))}
+
+              <button className={styles.schedAddDay} onClick={addDay}>
+                + Add Day
+              </button>
+            </div>
+
+            <div className={styles.modalBtns}>
+              <button className={styles.btnSave} onClick={saveSchedule} disabled={schedSaving}>
+                {schedSaving ? 'Saving…' : 'Save Schedule'}
+              </button>
+              <button className={styles.btnCancel} onClick={() => setEditingPlan(null)} disabled={schedSaving}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── AI PLAN MODAL ── */}
       {showAiModal && (

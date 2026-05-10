@@ -1,0 +1,44 @@
+.strip {
+  height: 40px;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  border-bottom: 1px solid #2a2a32;
+  flex-shrink: 0;
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dim {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: #8a8a92;
+}
+
+.accent {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: #b8ff3a;
+}
+
+.track {
+  height: 2px;
+  background: #2a2a32;
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: #b8ff3a;
+  border-radius: 1px;
+  transition: width 0.4s ease;
+}

@@ -1,0 +1,251 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet {
+  width: 100%;
+  background: #111114;
+  border-top: 1px solid #2a2a32;
+  border-radius: 20px 20px 0 0;
+  padding: 0 20px 32px;
+  max-height: 85vh;
+  overflow-y: auto;
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  background: #2a2a32;
+  border-radius: 2px;
+  margin: 12px auto 20px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+  color: #f4f4f6;
+}
+
+.sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: #8a8a92;
+  margin-top: 2px;
+}
+
+.pbBadge {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: #b8ff3a;
+  background: rgba(184, 255, 58, 0.1);
+  border: 1px solid rgba(184, 255, 58, 0.3);
+  border-radius: 6px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.loading {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: #4a4a52;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.historyNote {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  color: #4a4a52;
+  text-align: center;
+  padding: 6px 10px;
+  background: #16161a;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.deltaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.deltaCard {
+  background: #16161a;
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deltaLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1.5px;
+  color: #8a8a92;
+}
+
+.deltaValue {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: #f4f4f6;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.deltaUnit {
+  font-size: 0.9rem;
+  color: #8a8a92;
+}
+
+.deltaChange {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  color: #4a4a52;
+}
+
+.up { color: #b8ff3a; }
+.down { color: #ff3a6b; }
+
+.sparkCard {
+  background: #16161a;
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.sparkHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sparkLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1.5px;
+  color: #8a8a92;
+}
+
+.trend {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+}
+
+.trendUp { color: #b8ff3a; }
+.trendDown { color: #ff3a6b; }
+.trendFlat { color: #8a8a92; }
+
+.sparkWrap {
+  height: 60px;
+}
+
+.tooltip {
+  background: #1c1c22;
+  border: 1px solid #2a2a32;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: #b8ff3a;
+}
+
+.noData {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: #4a4a52;
+  text-align: center;
+  padding: 20px 0;
+  margin-bottom: 16px;
+}
+
+.insightsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.insightRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #16161a;
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.insightIcon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.insightText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.insightTitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #f4f4f6;
+}
+
+.insightSub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  color: #8a8a92;
+  line-height: 1.5;
+}
+
+.closeBtn {
+  width: 100%;
+  height: 48px;
+  background: #16161a;
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.15em;
+  color: #8a8a92;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.closeBtn:active {
+  border-color: #4a4a52;
+  color: #f4f4f6;
+}

@@ -1,0 +1,246 @@
+.wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #0a0a0c;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* ── Top bar ── */
+.topBar {
+  height: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid #2a2a32;
+  background: #0a0a0c;
+}
+
+.backBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #2a2a32;
+  border-radius: 8px;
+  color: #8a8a92;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.backBtn:active {
+  border-color: #4a4a52;
+  color: #f4f4f6;
+}
+
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.sessionTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  color: #f4f4f6;
+}
+
+.elapsed {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 1.5px;
+  color: #8a8a92;
+}
+
+.endBtn {
+  height: 36px;
+  padding: 0 14px;
+  background: rgba(255, 58, 107, 0.1);
+  border: 1px solid rgba(255, 58, 107, 0.4);
+  border-radius: 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: #ff3a6b;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.endBtn:active {
+  background: rgba(255, 58, 107, 0.2);
+}
+
+/* ── Scroll area ── */
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll::-webkit-scrollbar { width: 3px; }
+.scroll::-webkit-scrollbar-track { background: transparent; }
+.scroll::-webkit-scrollbar-thumb { background: #2a2a32; border-radius: 2px; }
+
+/* ── Section labels ── */
+.section {
+  margin-top: 20px;
+}
+
+.sectionLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: #4a4a52;
+  margin-bottom: 10px;
+}
+
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── End session modal ── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: flex-end;
+}
+
+.modal {
+  width: 100%;
+  background: #111114;
+  border-top: 1px solid #2a2a32;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 40px;
+}
+
+.modalTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.1em;
+  color: #f4f4f6;
+  margin-bottom: 4px;
+}
+
+.modalSub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: #8a8a92;
+  margin-bottom: 20px;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.ratingLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: #8a8a92;
+}
+
+.stars {
+  display: flex;
+  gap: 6px;
+}
+
+.star {
+  width: 36px;
+  height: 36px;
+  background: #16161a;
+  border: 1px solid #2a2a32;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  color: #4a4a52;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+
+.starActive {
+  color: #b8ff3a;
+  border-color: rgba(184, 255, 58, 0.4);
+  background: rgba(184, 255, 58, 0.06);
+}
+
+.notesInput {
+  width: 100%;
+  background: #16161a;
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  color: #f4f4f6;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  padding: 12px 14px;
+  outline: none;
+  resize: none;
+  margin-bottom: 20px;
+}
+
+.notesInput:focus {
+  border-color: #4a4a52;
+}
+
+.notesInput::placeholder {
+  color: #4a4a52;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+}
+
+.cancelModalBtn {
+  height: 48px;
+  padding: 0 20px;
+  background: transparent;
+  border: 1px solid #2a2a32;
+  border-radius: 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: #8a8a92;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.confirmEndBtn {
+  flex: 1;
+  height: 48px;
+  background: #b8ff3a;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  color: #0a0a0c;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.confirmEndBtn:disabled {
+  opacity: 0.6;
+}

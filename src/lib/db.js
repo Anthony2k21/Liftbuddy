@@ -132,6 +132,21 @@ export async function saveWeekAssignment(userId, planId, weekAssignment) {
   if (error) console.error('saveWeekAssignment', error)
 }
 
+export async function updateWorkoutPlan(userId, planId, updates) {
+  const row = {}
+  if (updates.name        !== undefined) row.name         = updates.name
+  if (updates.description !== undefined) row.description  = updates.description
+  if (updates.schedule    !== undefined) row.schedule     = updates.schedule
+  if (updates.daysPerWeek !== undefined) row.days_per_week = updates.daysPerWeek
+  const { error } = await supabase
+    .from('workout_plans')
+    .update(row)
+    .eq('user_id', userId)
+    .eq('id', planId)
+  if (error) console.error('updateWorkoutPlan', error)
+  return !error
+}
+
 export async function deleteWorkoutPlan(userId, planId) {
   const { error } = await supabase
     .from('workout_plans')

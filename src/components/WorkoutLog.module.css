@@ -808,3 +808,138 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── PLAN EDIT BUTTON ── */
+.planEditBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.2);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.planEditBtn:hover {
+  color: var(--accent);
+}
+
+/* ── SCHEDULE EDITOR MODAL ── */
+.scheduleModal {
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.scheduleEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.schedDay {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schedDayHeader {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.schedDayInput {
+  flex: 1;
+  font-weight: 600;
+  font-size: 11px !important;
+}
+
+.schedRemoveDay {
+  background: transparent;
+  border: none;
+  color: rgba(255,61,113,0.5);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.schedRemoveDay:hover {
+  color: var(--accent2);
+}
+
+.schedExRow {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.schedExName {
+  flex: 3;
+  font-size: 11px !important;
+}
+
+.schedExSmall {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px !important;
+  text-align: center;
+}
+
+.schedRemoveEx {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.15);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.schedRemoveEx:hover {
+  color: var(--accent2);
+}
+
+.schedAddEx {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.1);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.schedAddEx:hover {
+  border-color: rgba(0,229,255,0.3);
+  color: var(--accent);
+}
+
+.schedAddDay {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed rgba(0,229,255,0.2);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.schedAddDay:hover {
+  background: rgba(0,229,255,0.06);
+}

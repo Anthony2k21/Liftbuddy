@@ -1,0 +1,154 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  min-height: 52px;
+  border-bottom: 1px solid #1f1f25;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowDone {
+  background: rgba(184, 255, 58, 0.04);
+  padding: 6px 8px;
+  border-radius: 6px;
+  border-bottom: 1px solid rgba(184, 255, 58, 0.08);
+  cursor: pointer;
+}
+
+.actionRow {
+  padding: 6px 8px;
+  background: #16161a;
+  border-radius: 6px;
+  border-bottom: 1px solid #2a2a32;
+}
+
+.setNum {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  color: #4a4a52;
+  min-width: 20px;
+  text-align: center;
+}
+
+.rowDone .setNum {
+  color: #b8ff3a;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  background: #16161a;
+  border: 1px solid #2a2a32;
+  border-radius: 6px;
+  color: #f4f4f6;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  text-align: center;
+  padding: 0 4px;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  width: 0;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.input:focus {
+  border-color: #b8ff3a;
+}
+
+.sep,
+.doneSep {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: #4a4a52;
+}
+
+.doneValue {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: #b8ff3a;
+  flex: 1;
+  text-align: center;
+}
+
+.check {
+  font-size: 0.85rem;
+  color: #b8ff3a;
+  min-width: 28px;
+  text-align: center;
+}
+
+.checkBtn {
+  width: 44px;
+  flex-shrink: 0;
+  min-height: 44px;
+  background: #1c1c22;
+  border: 1px solid #2a2a32;
+  border-radius: 6px;
+  color: #4a4a52;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkReady {
+  border-color: #b8ff3a;
+  color: #b8ff3a;
+  background: rgba(184, 255, 58, 0.08);
+}
+
+.checkBtn:active {
+  transform: scale(0.95);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.editBtn,
+.deleteBtn,
+.cancelBtn {
+  flex: 1;
+  height: 36px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.editBtn {
+  background: rgba(0, 217, 255, 0.08);
+  border-color: #00d9ff;
+  color: #00d9ff;
+}
+
+.deleteBtn {
+  background: rgba(255, 58, 107, 0.08);
+  border-color: #ff3a6b;
+  color: #ff3a6b;
+}
+
+.cancelBtn {
+  background: #16161a;
+  border-color: #2a2a32;
+  color: #8a8a92;
+}
