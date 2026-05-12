@@ -70,17 +70,21 @@ function CustomDot({ cx, cy, payload }) {
 
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
-  const { date, score, weightChange, exerciseCount } = payload[0].payload
+  const { date, score, starRating, weightChange, exerciseCount } = payload[0].payload
   if (score == null) return null
   const label = getLabel(score)
   const color = LABEL_COLORS[label]
   const isUp  = weightChange?.change > 0
+  const stars = starRating ? '★'.repeat(starRating) + '☆'.repeat(5 - starRating) : null
   return (
     <div className={styles.tooltip}>
       <div className={styles.tooltipDate}>{date}</div>
       <div className={styles.tooltipScore} style={{ color }}>
         {score.toFixed(1)} — {label}
       </div>
+      {stars && (
+        <div className={styles.tooltipStars}>{stars}</div>
+      )}
       {exerciseCount > 0 && (
         <div className={styles.tooltipExercises}>
           {exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''} completed
@@ -109,10 +113,12 @@ export function SessionRatingChart({ history }) {
     return sorted.map(([date, score]) => {
       const sessions  = history.filter(s => s.date === date)
       const exercises = new Set(sessions.flatMap(s => (s.sets || []).map(e => e.exercise).filter(Boolean)))
+      const starRating = sessions.find(s => s.starRating != null)?.starRating ?? null
       return {
         date:          date.slice(5),
         fullDate:      date,
         score,
+        starRating,
         weightChange:  getBiggestWeightChange(date, history),
         exerciseCount: exercises.size,
       }

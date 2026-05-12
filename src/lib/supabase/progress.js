@@ -37,9 +37,8 @@ export async function fetchProgressHistory(userId) {
   const sessionById = {}
   for (const s of sessions) {
     sessionById[s.id] = {
-      date: s.started_at.split('T')[0],
-      // Convert 1-5 star rating to 1-10 scale; null stays null (will be backfilled)
-      rating: s.rating != null ? s.rating * 2 : null,
+      date:      s.started_at.split('T')[0],
+      rawRating: s.rating ?? null,   // raw 1-5 stars; blending done in calculateSessionRating
     }
   }
 
@@ -88,7 +87,8 @@ export async function fetchProgressHistory(userId) {
         date:        sess.date,
         muscleGroup,
         sets:        muscleSets,
-        rating:      sess.rating,
+        starRating:  sess.rawRating,   // raw 1-5 user stars (null if not rated)
+        rating:      null,             // computed by applyAutoRatings in Progress.jsx
       })
     }
   }

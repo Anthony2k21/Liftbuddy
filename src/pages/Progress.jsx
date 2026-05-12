@@ -9,7 +9,7 @@ import { SessionRatingChart }   from '../components/progress/SessionRatingChart'
 import { WeightProgressChart }  from '../components/WeightProgressChart'
 import styles from './Progress.module.css'
 
-// Compute auto-ratings in memory for sessions that don't have one yet.
+// Compute blended ratings (stars + weight performance) for every session.
 // Mutates history entries in place — no DB writes.
 function applyAutoRatings(history) {
   const byDate = {}
@@ -23,16 +23,18 @@ function applyAutoRatings(history) {
   for (let i = 0; i < dates.length; i++) {
     const date     = dates[i]
     const sessions = byDate[date]
-    if (sessions.every(s => s.rating != null)) continue
 
     const sessionData = {}
     for (const s of sessions) {
       sessionData[s.muscleGroup] = s.sets || []
     }
 
+    // Use the star rating from any entry in this date group (all share the same session)
+    const starRating = sessions.find(s => s.starRating != null)?.starRating ?? null
+
     const priorHistory = history.filter(s => s.date < date)
-    const { score } = calculateSessionRating(sessionData, priorHistory)
-    sessions.forEach(s => { if (s.rating == null) s.rating = score })
+    const { score } = calculateSessionRating(sessionData, priorHistory, starRating)
+    sessions.forEach(s => { s.rating = score })
   }
 }
 
