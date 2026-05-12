@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getWorkoutHistory, saveSessionRating } from '../lib/db'
+import { fetchProgressHistory, saveProgressRating } from '../lib/supabase/progress'
 import { calculateSessionRating } from '../utils/calculateSessionRating'
 import { StatsSummaryStrip }  from '../components/progress/StatsSummaryStrip'
 import { BodyPartPieChart }   from '../components/progress/BodyPartPieChart'
@@ -9,10 +9,9 @@ import { SessionRatingChart }   from '../components/progress/SessionRatingChart'
 import { WeightProgressChart }  from '../components/WeightProgressChart'
 import styles from './Progress.module.css'
 
-// Backfill ratings for any session that doesn't have one yet.
-// Processes dates in order so each session is rated against only prior history.
-async function backfillRatings(userId, history) {
-  // Group all sessions by date
+// Compute auto-ratings in memory for sessions that don't have one yet.
+// Mutates history entries in place — no DB writes.
+function applyAutoRatings(history) {
   const byDate = {}
   for (const s of history) {
     if (!byDate[s.date]) byDate[s.date] = []
@@ -20,36 +19,21 @@ async function backfillRatings(userId, history) {
   }
 
   const dates = Object.keys(byDate).sort()
-  let changed = false
 
   for (let i = 0; i < dates.length; i++) {
     const date     = dates[i]
     const sessions = byDate[date]
-
-    // Skip if every session for this date already has a rating
     if (sessions.every(s => s.rating != null)) continue
 
-    // Build sessionData shape: { muscleGroup: [sets] }
     const sessionData = {}
     for (const s of sessions) {
       sessionData[s.muscleGroup] = s.sets || []
     }
 
-    // History up to (not including) this date
     const priorHistory = history.filter(s => s.date < date)
-
     const { score } = calculateSessionRating(sessionData, priorHistory)
-
-    await Promise.all(
-      sessions.map(s => saveSessionRating(userId, date, s.muscleGroup, score))
-    )
-
-    // Update in-place so the chart renders immediately
-    sessions.forEach(s => { s.rating = score })
-    changed = true
+    sessions.forEach(s => { if (s.rating == null) s.rating = score })
   }
-
-  return changed
 }
 
 export function Progress({ userId }) {
@@ -60,9 +44,8 @@ export function Progress({ userId }) {
     if (!userId) return
     setLoading(true)
     try {
-      const data = await getWorkoutHistory(userId)
-      // Backfill any missing ratings silently, then update state once
-      await backfillRatings(userId, data)
+      const data = await fetchProgressHistory(userId)
+      applyAutoRatings(data)
       setHistory([...data])
     } finally {
       setLoading(false)

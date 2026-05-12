@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { getWorkoutHistory } from '../lib/db'
+import { fetchProgressHistory } from '../lib/supabase/progress'
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ReferenceDot,
@@ -11,54 +11,7 @@ const LINE_COLORS = [
   '#ffd166', '#ff9f40', '#ff6b6b', '#43e97b',
 ]
 
-const SEED_EXERCISES = [
-  { name: 'Bench Press',       muscle: 'chest',     startWeight: 70,  step: 2.5 },
-  { name: 'Squat',             muscle: 'legs',      startWeight: 90,  step: 5   },
-  { name: 'Deadlift',          muscle: 'back',      startWeight: 110, step: 5   },
-  { name: 'Overhead Press',    muscle: 'shoulders', startWeight: 45,  step: 2.5 },
-  { name: 'Barbell Row',       muscle: 'back',      startWeight: 65,  step: 2.5 },
-  { name: 'Incline DB Press',  muscle: 'chest',     startWeight: 26,  step: 2   },
-]
-
-function seedHistory() {
-  const existing = JSON.parse(localStorage.getItem('workoutHistory') || '[]')
-  const sessions = []
-  const today = new Date()
-  // Generate 12 sessions spread over last 90 days, every ~7 days
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i * 7 - Math.floor(Math.random() * 3))
-    const date = d.toISOString()
-
-    // Pick 3-4 exercises per session, alternating push/pull/legs
-    const exGroup = SEED_EXERCISES.filter((_, idx) => (idx % 3) === (i % 3))
-      .concat(SEED_EXERCISES.filter((_, idx) => (idx % 3) === ((i + 1) % 3)).slice(0, 1))
-
-    for (const ex of exGroup) {
-      const progress = (11 - i)
-      // slight random variation ±2.5kg
-      const jitter = (Math.round(Math.random() * 2) - 1) * 2.5
-      const weight = Math.max(ex.startWeight + progress * ex.step + jitter, ex.startWeight)
-      sessions.push({
-        date,
-        muscleGroup: ex.muscle,
-        sets: [{ exercise: ex.name, sets: 4, reps: 8, weight }],
-      })
-    }
-  }
-
-  localStorage.setItem('workoutHistory', JSON.stringify([...existing, ...sessions]))
-  return [...existing, ...sessions]
-}
-
-function loadHistory() {
-  try {
-    // return seedHistory() // seed disabled
-    return JSON.parse(localStorage.getItem('workoutHistory') || '[]')
-  } catch { return [] }
-}
-
-// Build { exerciseName: [{date, weight}] } from workoutHistory
+// Build { exerciseName: [{date, weight}] } from progress history
 function buildExerciseData(history, filterExercises, maxSessions) {
   const map = {}
   for (const session of history) {
@@ -151,7 +104,7 @@ export function WeightProgressChart({ userId, compact = false, filterExercises =
 
   const refresh = useCallback(() => {
     if (!userId) return
-    getWorkoutHistory(userId).then(setHistory)
+    fetchProgressHistory(userId).then(setHistory)
   }, [userId])
 
   useEffect(() => { refresh() }, [refresh])

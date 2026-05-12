@@ -234,8 +234,8 @@ export function computeSummaryStats(history) {
     return { totalWorkouts: 0, streak: 0, totalPBs: 0, avgSessionsPerWeek: 0, mostTrainedPart: '—' }
   }
 
-  // Unique workout sessions (date + muscle group)
-  const totalWorkouts = new Set(history.map(s => `${s.date}_${s.muscleGroup}`)).size
+  // Unique workout sessions — use sessionId when available (new data), fall back to date_muscleGroup
+  const totalWorkouts = new Set(history.map(s => s.sessionId || `${s.date}_${s.muscleGroup}`)).size
 
   const streak    = computeStreak(history)
   const totalPBs  = Object.keys(computePBs(history)).length
