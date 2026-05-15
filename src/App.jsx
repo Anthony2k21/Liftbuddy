@@ -10,6 +10,7 @@ import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { getMuscleCalendar, saveMuscleDay, saveSessionRating, getSelectedPlanId, getWorkoutPlans } from './lib/db'
+import { getTodaySession } from './lib/supabase/sessions'
 import { calculateSessionRating } from './utils/calculateSessionRating'
 import { WorkoutMode } from './pages/WorkoutMode'
 import './index.css'
@@ -233,6 +234,13 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   // ── Workout mode ───────────────────────────────────────────────────────────
   const [workoutModeData, setWorkoutModeData] = useState(null)
   const [showDayPicker, setShowDayPicker] = useState(false)
+  const [hasTodaySession, setHasTodaySession] = useState(false)
+
+  useEffect(() => {
+    if (!userId || !workoutTitle || isRestDay) { setHasTodaySession(false); return }
+    const label = workoutTitle.endsWith(' DAY') ? workoutTitle : workoutTitle + ' DAY'
+    getTodaySession(userId, label).then(s => setHasTodaySession(!!s))
+  }, [userId, workoutTitle, isRestDay, workoutModeData])
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab]   = useState('workout')
@@ -403,7 +411,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
                 }
               }}
             >
-              {isRestDay ? 'TRAIN ANYWAY →' : 'START →'}
+              {isRestDay ? 'TRAIN ANYWAY →' : hasTodaySession ? 'RETURN →' : 'START →'}
             </button>
           </div>
 
