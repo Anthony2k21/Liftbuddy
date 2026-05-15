@@ -236,12 +236,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   const [showDayPicker, setShowDayPicker] = useState(false)
   const [hasTodaySession, setHasTodaySession] = useState(false)
 
-  useEffect(() => {
-    if (!userId || !workoutTitle || isRestDay) { setHasTodaySession(false); return }
-    const label = workoutTitle.endsWith(' DAY') ? workoutTitle : workoutTitle + ' DAY'
-    getTodaySession(userId, label).then(s => setHasTodaySession(!!s))
-  }, [userId, workoutTitle, isRestDay, workoutModeData])
-
   // ── UI state ───────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab]   = useState('workout')
   const [autoRotate, setAutoRotate] = useState(true)
@@ -288,6 +282,12 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   const workoutMeta     = todayPlanInfo && !isRestDay
     ? `${todayPlanInfo.planName.toUpperCase()} · ${workoutExercises.length} EXERCISES · ~${workoutExercises.length * 10} MIN`
     : todayPlanInfo?.planName?.toUpperCase() || 'SET UP A PLAN IN PLANS TAB'
+
+  useEffect(() => {
+    if (!userId || isRestDay) { setHasTodaySession(false); return }
+    const label = workoutTitle.endsWith(' DAY') ? workoutTitle : workoutTitle + ' DAY'
+    getTodaySession(userId, label).then(s => setHasTodaySession(!!s))
+  }, [userId, workoutTitle, isRestDay, workoutModeData])
 
   const activeMuscleLabels = Object.entries(weekDisplayData)
     .filter(([, lvl]) => lvl !== 'low')
