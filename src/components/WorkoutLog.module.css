@@ -1,623 +1,500 @@
+/* Inherits app-level design tokens from index.css */
 .wrap {
+  --c-bg:        var(--bg);
+  --c-bg2:       rgba(255, 255, 255, 0.02);
+  --c-bg3:       rgba(255, 255, 255, 0.03);
+  --c-bg4:       rgba(255, 255, 255, 0.05);
+  --c-line:      rgba(255, 255, 255, 0.07);
+  --c-line2:     rgba(255, 255, 255, 0.05);
+  --c-text:      var(--text);
+  --c-dim:       rgba(255, 255, 255, 0.4);
+  --c-faint:     rgba(255, 255, 255, 0.22);
+  --c-accent:    var(--accent);
+  --c-accent-bg: rgba(0, 217, 255, 0.07);
+  --c-accent-ln: rgba(0, 217, 255, 0.25);
+  --c-warn:      var(--accent2);
+
   display: flex;
-  flex: 1;
-  overflow: hidden;
+  flex-direction: column;
   height: 100%;
-}
-
-/* ── BODY PANEL ── */
-.bodyPanel {
-  width: 160px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 14px 10px;
-  border-right: 1px solid rgba(255,255,255,0.05);
-  background: #080e18;
-  overflow-y: auto;
-}
-
-.panelTitle {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.85rem;
-  letter-spacing: 0.2em;
-  color: var(--muted);
-  margin-bottom: 10px;
-  align-self: flex-start;
-}
-
-.svgWrap {
-  width: 100%;
-}
-
-.svg {
-  width: 100%;
-  height: auto;
-}
-
-.zone {
-  cursor: pointer;
-  transition: filter 0.2s;
-}
-
-.zone:hover {
-  filter: brightness(1.4);
-}
-
-.trained {
-  filter: drop-shadow(0 0 4px currentColor);
-}
-
-.bodyInfo {
-  margin-top: 10px;
-  width: 100%;
-  background: rgba(0,229,255,0.05);
-  border: 1px solid rgba(0,229,255,0.15);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 10px;
-  color: var(--muted);
-  text-align: center;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.3s, border-color 0.3s;
-}
-
-/* ── BOARDS PANEL ── */
-.boardsPanel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  background: var(--c-bg);
   overflow: hidden;
-  background: var(--bg);
 }
 
-.topbar {
+/* ── HEADER ── */
+.header {
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid var(--c-line);
+  flex-shrink: 0;
+}
+
+.headerTop {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  flex-shrink: 0;
+  align-items: flex-start;
 }
 
-.topbarTitle {
+.title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  letter-spacing: 0.2em;
-  color: var(--text);
+  font-size: 28px;
+  letter-spacing: 2px;
+  line-height: 1;
+  color: var(--c-text);
 }
 
 .dateLabel {
+  font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--c-dim);
   letter-spacing: 1px;
-  margin-top: 2px;
+  margin-top: 5px;
 }
 
-.addBtn {
-  background: rgba(0,229,255,0.08);
-  border: 1px solid rgba(0,229,255,0.25);
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--c-line);
+  padding: 7px 11px;
   border-radius: 6px;
-  color: var(--accent);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  padding: 6px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--c-dim);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.15s, color 0.15s;
 }
 
-.addBtn:hover {
-  background: rgba(0,229,255,0.15);
+.btn svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+.btn:hover {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
 }
 
-/* ── VIEW TABS ── */
-.viewTabs {
+.btnAi {
   display: flex;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid rgba(165, 107, 255, 0.35);
+  padding: 7px 11px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #a56bff;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
 }
 
-.viewTab {
+.btnAi svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+.btnAi:hover {
+  border-color: #a56bff;
+  color: #c49bff;
+}
+
+/* ── CONTENT SCROLL AREA ── */
+.content {
   flex: 1;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: rgba(255,255,255,0.35);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
+  overflow-y: auto;
+  padding: 14px 16px 80px;
+}
+
+/* ── SECTION LABELS ── */
+.sectionLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--c-faint);
   letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 2px 10px;
+}
+
+/* ── ACTIVE PLAN HERO CARD ── */
+.activeCard {
+  background: var(--c-bg3);
+  border: 1px solid var(--c-accent-ln);
+  border-radius: 14px;
+  overflow: visible;
+  margin-bottom: 22px;
+  position: relative;
+}
+
+.activeBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--c-accent);
+  border-radius: 14px 0 0 14px;
+}
+
+.activeHero {
+  padding: 16px 16px 14px 20px;
+  background: linear-gradient(135deg, var(--c-accent-bg) 0%, transparent 100%);
+  border-bottom: 1px solid var(--c-line2);
+}
+
+.activeStatus {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.activePill {
+  background: var(--c-accent-bg);
+  border: 1px solid var(--c-accent-ln);
+  color: var(--c-accent);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.activeIcons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  position: relative;
+}
+
+.iconBtn {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--c-line);
+  border-radius: 6px;
+  color: var(--c-faint);
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.viewTab:hover {
-  color: rgba(255,255,255,0.6);
-}
-
-.viewTabActive {
-  color: #fff;
-  border-bottom-color: #fff;
-}
-
-/* ── PLAN CARD ── */
-.planCard {
-  background: #0d1422;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-
-.planCard:hover {
-  border-color: rgba(255,255,255,0.1);
-}
-
-.planHeader {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 12px 12px 0;
-  cursor: pointer;
-  user-select: none;
-}
-
-.planColorBar {
-  width: 4px;
-  align-self: stretch;
-  border-radius: 0 2px 2px 0;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
   flex-shrink: 0;
 }
 
-.planTitleWrap {
-  flex: 1;
+.iconBtn:hover { color: var(--c-text); border-color: var(--c-dim); }
+.iconBtn svg { width: 12px; height: 12px; }
+
+.activeName {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--c-text);
+  margin-bottom: 8px;
+  line-height: 1.1;
 }
 
-.planName {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 5px;
-}
-
-.planMeta {
+.activeMeta {
   display: flex;
-  align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.planTypeBadge {
-  font-size: 9px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  border: 1px solid;
+.metaTag {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--c-line);
+  padding: 3px 7px;
   border-radius: 4px;
-  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--c-dim);
 }
 
-.planDurBadge, .planDaysBadge {
-  font-size: 9px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--muted);
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 4px;
-  padding: 2px 6px;
+/* ── WEEKLY SCHEDULE GRID ── */
+.scheduleSection {
+  padding: 14px 16px 14px 20px;
+  border-bottom: 1px solid var(--c-line2);
 }
 
-.planCheckBtn {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
+.scheduleHeader {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.2s;
+  margin-bottom: 10px;
 }
 
-.planCheckBtn:hover {
-  border-color: rgba(255,255,255,0.35);
-  color: var(--text);
+.scheduleTitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--c-faint);
+  letter-spacing: 1.5px;
 }
 
-.planCheckBtnActive {
-  background: rgba(255,255,255,0.05);
+.scheduleWeek {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--c-dim);
+  letter-spacing: 1px;
 }
 
-.planDeleteBtn {
-  background: transparent;
-  border: none;
-  color: rgba(255,255,255,0.2);
-  font-size: 11px;
-  cursor: pointer;
-  padding: 4px 6px;
-  transition: color 0.15s;
-  flex-shrink: 0;
+.scheduleGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
 }
 
-.planDeleteBtn:hover {
-  color: var(--accent2);
-}
-
-.planBody {
-  border-top: 1px solid rgba(255,255,255,0.04);
-  padding: 12px 14px 14px;
-}
-
-.planDesc {
-  font-size: 11px;
-  color: var(--muted);
-  margin: 0 0 12px;
-  line-height: 1.5;
-}
-
-.planSchedule {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.planEmpty {
-  font-size: 11px;
-  color: var(--muted);
+.day {
+  background: var(--c-bg2);
+  border: 1px solid var(--c-line2);
+  border-radius: 6px;
+  padding: 7px 3px 6px;
   text-align: center;
-  padding: 10px 0;
+  min-width: 0;
 }
 
-.planDay {
+.dayLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  color: var(--c-faint);
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.dayName {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--c-text);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.dayRest {
+  color: var(--c-faint);
+  font-weight: 500;
+}
+
+.dayDone {
+  background: var(--c-accent-bg);
+  border-color: var(--c-accent-ln);
+}
+.dayDone .dayLabel { color: var(--c-accent); }
+.dayDone .dayName  { color: var(--c-accent); }
+
+.dayToday {
+  background: var(--c-accent-bg);
+  border-color: var(--c-accent);
+}
+.dayToday .dayLabel { color: var(--c-accent); opacity: 0.7; }
+.dayToday .dayName  { color: var(--c-accent); }
+
+/* ── PROGRESS ── */
+.progressSection {
+  padding: 12px 16px 14px 20px;
+}
+
+.progressRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.progressLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--c-dim);
+  letter-spacing: 1px;
+}
+
+.progressValue {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--c-accent);
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.progressBar {
+  height: 4px;
+  background: rgba(184, 255, 58, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--c-accent);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  min-width: 4px;
+}
+
+/* ── NO ACTIVE PLAN ── */
+.noActivePlan {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--c-faint);
+  letter-spacing: 0.5px;
+  text-align: center;
+  padding: 24px 20px;
+  background: var(--c-bg2);
+  border: 1px dashed var(--c-line);
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+/* ── SAVED PLANS ── */
+.savedList {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.planDayHeader {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.85rem;
-  letter-spacing: 0.15em;
-}
-
-.planTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-
-.planTable th {
-  padding: 3px 6px;
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--muted);
-  text-transform: uppercase;
-  font-weight: 400;
-  text-align: left;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.planExRow {
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-
-.planExRow td {
-  padding: 5px 6px;
-  vertical-align: middle;
-}
-
-.planExName {
-  color: var(--text);
-}
-
-.planExVal {
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.emptyState {
-  text-align: center;
-  color: var(--muted);
-  font-size: 12px;
-  padding: 40px 20px;
-  line-height: 1.6;
-}
-
-.boardsContainer {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px 12px 80px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* ── BOARD CARD ── */
-.boardCard {
-  background: #0d1422;
-  border: 1px solid rgba(255,255,255,0.06);
+.savedRow {
+  background: var(--c-bg3);
+  border: 1px solid var(--c-line2);
   border-radius: 10px;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-
-.boardCard:hover {
-  border-color: rgba(255,255,255,0.1);
-}
-
-.boardHeader {
+  padding: 12px 12px 12px 14px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  cursor: pointer;
-  user-select: none;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.boardIcon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
+.savedRow:hover {
+  border-color: var(--c-line);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.boardTitleWrap {
+.savedRowMain {
   flex: 1;
+  min-width: 0;
 }
 
-.boardTitle {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-}
-
-.boardSub {
-  font-size: 10px;
-  letter-spacing: 1px;
-  margin-top: 1px;
-}
-
-.boardBadge {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.checkBtn {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-
-.checkBtn:hover {
-  border-color: rgba(255,255,255,0.35);
-  color: var(--text);
-}
-
-.checkBtnDone {
-  background: rgba(0,229,255,0.08);
-}
-
-.toggle {
-  color: var(--muted);
+.savedName {
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
-  transition: transform 0.2s;
+  font-weight: 600;
+  color: var(--c-text);
+  line-height: 1.2;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.toggleOpen {
-  transform: rotate(180deg);
-}
-
-.boardBody {
-  padding: 0 12px 12px;
-  border-top: 1px solid rgba(255,255,255,0.04);
-}
-
-/* Stats */
-.statsRow {
+.savedMeta {
   display: flex;
   gap: 8px;
-  padding: 10px 0 8px;
 }
 
-.statPill {
-  flex: 1;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 8px;
-  padding: 6px 8px;
-  text-align: center;
-}
-
-.statVal {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.statLabel {
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-top: 1px;
-}
-
-/* Exercise table */
-.exTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-
-.exTable thead tr {
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.exTable th {
-  padding: 4px 6px;
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--muted);
-  text-transform: uppercase;
-  font-weight: 400;
-  text-align: left;
-}
-
-.exRow {
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  transition: background 0.15s;
-}
-
-.exRow:hover {
-  background: rgba(255,255,255,0.03);
-}
-
-.exRow td {
-  padding: 6px 6px;
-  vertical-align: middle;
-}
-
-.exName {
-  color: var(--text);
-  font-size: 11px;
-}
-
-.exNotes {
-  font-size: 9px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.exSets {
-  font-size: 11px;
-  color: #7a8a98;
-  white-space: nowrap;
-}
-
-.exVol {
-  font-size: 11px;
-  color: var(--accent);
-  white-space: nowrap;
-}
-
-.pctBar {
-  height: 4px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 2px;
-  width: 60px;
-  overflow: hidden;
-}
-
-.pctFill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.3s;
-}
-
-.editBtn {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 4px;
-  color: var(--muted);
-  font-size: 9px;
-  padding: 2px 6px;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+.savedTag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: var(--c-faint);
   letter-spacing: 0.5px;
-  transition: all 0.15s;
 }
 
-.editBtn:hover {
-  border-color: rgba(0,229,255,0.4);
-  color: var(--accent);
-}
-
-/* Quick add */
-.quickAdd {
+.savedActions {
   display: flex;
-  gap: 5px;
-  margin-top: 10px;
   align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.qaInput {
-  flex: 2;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  padding: 6px 8px;
-  outline: none;
-}
-
-.qaInput:focus {
-  border-color: rgba(0,229,255,0.3);
-}
-
-.qaNum {
-  flex: 0.7;
-  min-width: 40px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  padding: 6px 6px;
-  outline: none;
-  text-align: center;
-}
-
-.qaBtn {
-  background: rgba(0,229,255,0.08);
-  border: 1px solid rgba(0,229,255,0.25);
-  border-radius: 6px;
-  color: var(--accent);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
+.activateBtn {
+  background: transparent;
+  border: 1px solid var(--c-line);
+  color: var(--c-dim);
   padding: 6px 10px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
   cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
   white-space: nowrap;
-  transition: background 0.15s;
 }
 
-.qaBtn:hover {
-  background: rgba(0,229,255,0.15);
+.activateBtn:hover {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  background: var(--c-accent-bg);
+}
+
+/* ── DROPDOWN MENU ── */
+.menuWrap {
+  position: relative;
+}
+
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+}
+
+.dropMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #0d0d10;
+  border: 1px solid var(--c-line);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 130px;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.dropItem {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--c-dim);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.dropItem:hover { background: rgba(255,255,255,0.04); color: var(--c-text); }
+
+.dropItemDanger { color: var(--c-warn); }
+.dropItemDanger:hover { background: rgba(255, 58, 107, 0.08); color: var(--c-warn); }
+
+/* ── EMPTY STATE ── */
+.emptyState {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--c-faint);
+  letter-spacing: 0.5px;
+  padding: 40px 20px;
+  line-height: 1.8;
 }
 
 /* ── MODALS ── */
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.8);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -626,48 +503,60 @@
 }
 
 .modalBox {
-  background: #0d1422;
-  border: 1px solid rgba(0,229,255,0.2);
-  border-radius: 12px;
-  padding: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  padding: 22px 20px 20px;
   width: 100%;
   max-width: 340px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.scheduleModal {
+  max-width: 400px;
+  max-height: 82vh;
+  overflow-y: auto;
 }
 
 .modalTitle {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: 0.15em;
-  color: var(--text);
-  margin-bottom: 4px;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: var(--c-text);
+  line-height: 1;
+}
+
+.modalSub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--c-faint);
+  letter-spacing: 0.5px;
+  margin-top: -4px;
 }
 
 .label {
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--c-faint);
   text-transform: uppercase;
-  margin-top: 4px;
 }
 
 .input {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--c-line);
   border-radius: 6px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
+  color: var(--c-text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
   padding: 8px 10px;
   outline: none;
   width: 100%;
 }
 
-.input:focus {
-  border-color: rgba(0,229,255,0.4);
-}
+.input:focus { border-color: rgba(184, 255, 58, 0.4); }
 
 .modalRow {
   display: flex;
@@ -685,163 +574,88 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: 2px;
 }
 
 .swatch {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid transparent;
   transition: transform 0.15s;
 }
 
-.swatch:hover {
-  transform: scale(1.15);
-}
-
-.swatchSel {
-  border-color: white;
-  transform: scale(1.15);
-}
+.swatch:hover { transform: scale(1.15); }
+.swatchSel { border-color: white; transform: scale(1.15); }
 
 .modalBtns {
   display: flex;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .btnSave {
   flex: 1;
-  background: rgba(0,229,255,0.12);
-  border: 1px solid rgba(0,229,255,0.35);
+  background: var(--c-accent-bg);
+  border: 1px solid var(--c-accent-ln);
   border-radius: 6px;
-  color: var(--accent);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  padding: 8px;
+  color: var(--c-accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 9px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.btnSave:hover {
-  background: rgba(0,229,255,0.22);
-}
-
-.btnDelete {
-  background: rgba(255,61,113,0.1);
-  border: 1px solid rgba(255,61,113,0.3);
-  border-radius: 6px;
-  color: var(--accent2);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.btnDelete:hover {
-  background: rgba(255,61,113,0.2);
-}
+.btnSave:hover { background: rgba(184, 255, 58, 0.15); }
+.btnSave:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btnCancel {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--c-line);
   border-radius: 6px;
-  color: var(--muted);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  padding: 8px 12px;
+  color: var(--c-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 9px 14px;
   cursor: pointer;
-}
-
-.topbarBtns {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.addBtnAi {
-  background: rgba(165,107,255,0.1);
-  border: 1px solid rgba(165,107,255,0.35);
-  border-radius: 6px;
-  color: #a56bff;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  padding: 6px 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.addBtnAi:hover {
-  background: rgba(165,107,255,0.2);
 }
 
 .aiTextarea {
   width: 100%;
   background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(0,229,255,0.2);
+  border: 1px solid var(--c-line);
   border-radius: 6px;
-  color: #e8eaf0;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  padding: 10px 12px;
+  color: var(--c-text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 10px;
   resize: vertical;
   outline: none;
-  transition: border-color 0.2s;
-  box-sizing: border-box;
 }
 
-.aiTextarea:focus {
-  border-color: rgba(0,229,255,0.5);
-}
+.aiTextarea:focus { border-color: rgba(184, 255, 58, 0.4); }
 
 .aiError {
-  font-size: 11px;
-  color: #ff6b6b;
-  padding: 4px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--c-warn);
 }
 
-.btnSave:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── PLAN EDIT BUTTON ── */
-.planEditBtn {
-  background: transparent;
-  border: none;
-  color: rgba(255,255,255,0.2);
-  font-size: 13px;
-  cursor: pointer;
-  padding: 4px 6px;
-  transition: color 0.15s;
-  flex-shrink: 0;
-}
-
-.planEditBtn:hover {
-  color: var(--accent);
-}
-
-/* ── SCHEDULE EDITOR MODAL ── */
-.scheduleModal {
-  max-width: 420px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
+/* ── SCHEDULE EDITOR ── */
 .scheduleEditor {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-bottom: 8px;
+  gap: 12px;
 }
 
 .schedDay {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--c-line2);
   border-radius: 8px;
   padding: 10px;
   display: flex;
@@ -855,26 +669,7 @@
   align-items: center;
 }
 
-.schedDayInput {
-  flex: 1;
-  font-weight: 600;
-  font-size: 11px !important;
-}
-
-.schedRemoveDay {
-  background: transparent;
-  border: none;
-  color: rgba(255,61,113,0.5);
-  font-size: 11px;
-  cursor: pointer;
-  padding: 4px;
-  flex-shrink: 0;
-  transition: color 0.15s;
-}
-
-.schedRemoveDay:hover {
-  color: var(--accent2);
-}
+.schedDayInput { flex: 1; font-weight: 600 !important; }
 
 .schedExRow {
   display: flex;
@@ -882,64 +677,50 @@
   align-items: center;
 }
 
-.schedExName {
-  flex: 3;
-  font-size: 11px !important;
-}
+.schedExName  { flex: 3; }
+.schedExSmall { flex: 1; min-width: 0; text-align: center; }
 
-.schedExSmall {
-  flex: 1;
-  min-width: 0;
-  font-size: 11px !important;
-  text-align: center;
-}
-
-.schedRemoveEx {
+.schedRemove {
   background: transparent;
   border: none;
   color: rgba(255,255,255,0.15);
   font-size: 10px;
   cursor: pointer;
   padding: 4px;
-  flex-shrink: 0;
   transition: color 0.15s;
+  flex-shrink: 0;
 }
 
-.schedRemoveEx:hover {
-  color: var(--accent2);
-}
+.schedRemove:hover { color: var(--c-warn); }
 
 .schedAddEx {
   align-self: flex-start;
   background: transparent;
   border: 1px dashed rgba(255,255,255,0.1);
   border-radius: 4px;
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--c-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
   letter-spacing: 0.5px;
   padding: 4px 10px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 
-.schedAddEx:hover {
-  border-color: rgba(0,229,255,0.3);
-  color: var(--accent);
-}
+.schedAddEx:hover { border-color: var(--c-accent-ln); color: var(--c-accent); }
 
 .schedAddDay {
   align-self: flex-start;
   background: transparent;
-  border: 1px dashed rgba(0,229,255,0.2);
+  border: 1px dashed var(--c-accent-ln);
   border-radius: 6px;
-  color: var(--accent);
-  font-size: 11px;
+  color: var(--c-accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
   letter-spacing: 0.5px;
-  padding: 6px 14px;
+  padding: 7px 14px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.schedAddDay:hover {
-  background: rgba(0,229,255,0.06);
-}
+.schedAddDay:hover { background: var(--c-accent-bg); }

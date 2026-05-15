@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import styles from './WorkoutLog.module.css'
 import { getWorkoutPlans, createWorkoutPlan, updateWorkoutPlan, deleteWorkoutPlan, getSelectedPlanId, saveSelectedPlanId } from '../lib/db'
+import { useWorkoutHistory } from '../hooks/useWorkoutHistory'
 
 const ACCENT_COLORS = [
   '#4f6cff','#00e5c8','#a56bff','#ff6bae',
   '#ffd166','#ff9f40','#ff6b6b','#43e97b','#00e5ff'
 ]
 
-// ── WORKOUT PLANS ──────────────────────────────────────────────────────────
 const INITIAL_PLANS = [
   {
     id: 1,
@@ -19,25 +19,25 @@ const INITIAL_PLANS = [
     description: 'Classic Push Pull Legs split for hypertrophy and strength.',
     schedule: [
       { day: 'Push', exercises: [
-        { name: 'Bench Press',        sets: 4, reps: '6–8'  },
-        { name: 'Overhead Press',     sets: 3, reps: '8–10' },
-        { name: 'Incline DB Press',   sets: 3, reps: '10–12'},
-        { name: 'Lateral Raise',      sets: 3, reps: '15'   },
-        { name: 'Tricep Pushdown',    sets: 3, reps: '12'   },
+        { name: 'Bench Press',      sets: 4, reps: '6–8'   },
+        { name: 'Overhead Press',   sets: 3, reps: '8–10'  },
+        { name: 'Incline DB Press', sets: 3, reps: '10–12' },
+        { name: 'Lateral Raise',    sets: 3, reps: '15'    },
+        { name: 'Tricep Pushdown',  sets: 3, reps: '12'    },
       ]},
       { day: 'Pull', exercises: [
-        { name: 'Deadlift',           sets: 3, reps: '5'    },
-        { name: 'Pull-ups',           sets: 4, reps: '6–8'  },
-        { name: 'Barbell Row',        sets: 3, reps: '8–10' },
-        { name: 'Face Pulls',         sets: 3, reps: '15'   },
-        { name: 'Hammer Curl',        sets: 3, reps: '12'   },
+        { name: 'Deadlift',         sets: 3, reps: '5'     },
+        { name: 'Pull-ups',         sets: 4, reps: '6–8'   },
+        { name: 'Barbell Row',      sets: 3, reps: '8–10'  },
+        { name: 'Face Pulls',       sets: 3, reps: '15'    },
+        { name: 'Hammer Curl',      sets: 3, reps: '12'    },
       ]},
       { day: 'Legs', exercises: [
-        { name: 'Squat',              sets: 4, reps: '6–8'  },
-        { name: 'Leg Press',          sets: 3, reps: '10–12'},
-        { name: 'Romanian Deadlift',  sets: 3, reps: '10'   },
-        { name: 'Leg Curl',           sets: 3, reps: '12'   },
-        { name: 'Calf Raises',        sets: 4, reps: '20'   },
+        { name: 'Squat',            sets: 4, reps: '6–8'   },
+        { name: 'Leg Press',        sets: 3, reps: '10–12' },
+        { name: 'Romanian Deadlift',sets: 3, reps: '10'    },
+        { name: 'Leg Curl',         sets: 3, reps: '12'    },
+        { name: 'Calf Raises',      sets: 4, reps: '20'    },
       ]},
     ],
   },
@@ -64,7 +64,6 @@ const INITIAL_PLANS = [
   },
 ]
 
-// ── COMPONENT ──────────────────────────────────────────────────────────────
 const AI_PLAN_PROMPT = `You are a fitness plan generator. The user will describe the workout plan they want.
 Output ONLY a JSON object wrapped in <PLAN>...</PLAN> tags with this exact schema — no other text:
 <PLAN>{
@@ -86,10 +85,37 @@ Output ONLY a JSON object wrapped in <PLAN>...</PLAN> tags with this exact schem
 Pick a color from: #4f6cff #00e5c8 #a56bff #ff6bae #ffd166 #ff9f40 #ff6b6b #43e97b #00e5ff
 Include a complete, realistic schedule with proper exercises. Output ONLY the <PLAN> block.`
 
+const DOW_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+const FREQ_MAP = { 1:[0],2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4],6:[0,1,2,3,4,5],7:[0,1,2,3,4,5,6] }
+
+function getBlockForDow(plan, dow) {
+  if (!plan?.schedule?.length) return null
+  const wa = plan.weekAssignment
+  if (wa) {
+    const idx = wa[dow]
+    return idx != null ? (plan.schedule[idx] ?? null) : null
+  }
+  const days = FREQ_MAP[plan.daysPerWeek] || []
+  const i = days.indexOf(dow)
+  return i !== -1 ? plan.schedule[i % plan.schedule.length] : null
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function weekNumber() {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 1)
+  return Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7)
+}
+
 export function WorkoutLog({ userId }) {
   const [plans, setPlans]               = useState([])
-  const [activePlanId, setActivePlanId] = useState(null)
   const [selectedPlanId, setSelectedPlanId] = useState(null)
+  const [openMenuId, setOpenMenuId]     = useState(null)
+
+  // Modals
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [planName,  setPlanName]  = useState('')
   const [planType,  setPlanType]  = useState('')
@@ -97,150 +123,120 @@ export function WorkoutLog({ userId }) {
   const [planDays,  setPlanDays]  = useState(3)
   const [planColor, setPlanColor] = useState(ACCENT_COLORS[0])
   const [planDesc,  setPlanDesc]  = useState('')
+
   const [showAiModal, setShowAiModal] = useState(false)
   const [aiPrompt,  setAiPrompt]  = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError,   setAiError]   = useState('')
 
   // Schedule editor
-  const [editingPlan, setEditingPlan] = useState(null) // plan object being edited
-  const [editSchedule, setEditSchedule] = useState([]) // draft schedule
-  const [schedSaving, setSchedSaving] = useState(false)
+  const [editingPlan,   setEditingPlan]   = useState(null)
+  const [editSchedule,  setEditSchedule]  = useState([])
+  const [schedSaving,   setSchedSaving]   = useState(false)
 
-  // Load plans and selected plan from Supabase on mount
-  // If user has no plans yet, seed the defaults into Supabase so IDs are real
+  const { history } = useWorkoutHistory(userId)
+
   useEffect(() => {
     if (!userId) return
     getWorkoutPlans(userId).then(async data => {
       if (data.length > 0) {
         setPlans(data)
       } else {
-        // Seed initial plans into Supabase
-        const seeded = await Promise.all(
-          INITIAL_PLANS.map(p => createWorkoutPlan(userId, p))
-        )
+        const seeded = await Promise.all(INITIAL_PLANS.map(p => createWorkoutPlan(userId, p)))
         setPlans(seeded.filter(Boolean))
       }
     })
     getSelectedPlanId(userId).then(setSelectedPlanId)
   }, [userId])
 
-  // Persist selected plan (localStorage, scoped by userId)
   useEffect(() => {
     if (!userId || selectedPlanId === null) return
     saveSelectedPlanId(userId, selectedPlanId)
   }, [selectedPlanId, userId])
 
+  // Derived data
+  const activePlan = useMemo(() => plans.find(p => p.id === selectedPlanId) || null, [plans, selectedPlanId])
+  const savedPlans = useMemo(() => plans.filter(p => p.id !== selectedPlanId), [plans, selectedPlanId])
+
+  const loggedDates = useMemo(() => new Set(history.map(h => h.date).filter(Boolean)), [history])
+
+  const today = new Date()
+  const todayDow = (today.getDay() + 6) % 7
+
+  const weekGrid = useMemo(() => {
+    const t = today
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(t)
+      d.setDate(t.getDate() - todayDow + i)
+      const ds = d.toISOString().slice(0, 10)
+      const block = activePlan ? getBlockForDow(activePlan, i) : null
+      return {
+        dow:     DOW_LABELS[i],
+        dateStr: ds,
+        block,
+        isToday: ds === todayStr(),
+        isDone:  ds < todayStr() && loggedDates.has(ds),
+      }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePlan, loggedDates])
+
+  const trainingDaysThisWeek = weekGrid.filter(d => d.block !== null).length
+  const doneThisWeek = weekGrid.filter(d => d.isDone && d.block !== null).length
+  const weekPct = trainingDaysThisWeek > 0 ? Math.round(doneThisWeek / trainingDaysThisWeek * 100) : 0
+
+  const dateLabel = today.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   async function savePlan() {
     if (!planName.trim()) return
-    const newPlan = {
-      name: planName.trim(),
-      type: planType.trim() || 'Custom',
-      duration: planDur.trim() || '4 weeks',
-      daysPerWeek: +planDays,
-      color: planColor,
-      description: planDesc.trim(),
-      schedule: [],
-    }
-    const created = await createWorkoutPlan(userId, newPlan)
+    const created = await createWorkoutPlan(userId, {
+      name: planName.trim(), type: planType.trim() || 'Custom',
+      duration: planDur.trim() || '4 weeks', daysPerWeek: +planDays,
+      color: planColor, description: planDesc.trim(), schedule: [],
+    })
     if (created) setPlans(prev => [...prev, created])
     setShowPlanModal(false)
-    setPlanName(''); setPlanType(''); setPlanDur('4 weeks')
-    setPlanDays(3); setPlanDesc('')
+    setPlanName(''); setPlanType(''); setPlanDur('4 weeks'); setPlanDays(3); setPlanDesc('')
   }
 
-  async function deletePlan(id, e) {
-    e.stopPropagation()
+  async function deletePlan(id) {
     await deleteWorkoutPlan(userId, id)
     setPlans(prev => prev.filter(p => p.id !== id))
-    if (activePlanId === id) setActivePlanId(null)
     if (selectedPlanId === id) setSelectedPlanId(null)
+    setOpenMenuId(null)
   }
 
   async function generateAiPlan() {
     const text = aiPrompt.trim()
     if (!text || aiLoading) return
-    setAiLoading(true)
-    setAiError('')
+    setAiLoading(true); setAiError('')
     try {
-      const contents = [
-        { role: 'user',  parts: [{ text: AI_PLAN_PROMPT }] },
-        { role: 'model', parts: [{ text: 'Ready. Describe the plan.' }] },
-        { role: 'user',  parts: [{ text }] },
-      ]
       const res  = await fetch('/api/chat', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ contents }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [
+          { role: 'user',  parts: [{ text: AI_PLAN_PROMPT }] },
+          { role: 'model', parts: [{ text: 'Ready. Describe the plan.' }] },
+          { role: 'user',  parts: [{ text }] },
+        ]}),
       })
-      const data = await res.json()
-      const parts = data.candidates?.[0]?.content?.parts ?? []
-      const raw   = parts.map(p => p.text || '').join('')
+      const data  = await res.json()
+      const raw   = (data.candidates?.[0]?.content?.parts ?? []).map(p => p.text || '').join('')
       const match = raw.match(/<PLAN>([\s\S]*?)<\/PLAN>/)
       if (!match) throw new Error('No plan returned. Try describing it differently.')
-      const plan = JSON.parse(match[1])
+      const plan    = JSON.parse(match[1])
       const created = await createWorkoutPlan(userId, plan)
-      if (created) {
-        setPlans(prev => [...prev, created])
-        setActivePlanId(created.id)
-      }
-      setShowAiModal(false)
-      setAiPrompt('')
+      if (created) { setPlans(prev => [...prev, created]); setSelectedPlanId(created.id) }
+      setShowAiModal(false); setAiPrompt('')
     } catch (err) {
-      setAiError(err.message || 'Something went wrong. Try again.')
-    } finally {
-      setAiLoading(false)
-    }
+      setAiError(err.message || 'Something went wrong.')
+    } finally { setAiLoading(false) }
   }
 
-  // ── SCHEDULE EDITOR ────────────────────────────────────────────────────────
-
-  function openScheduleEditor(plan, e) {
-    e.stopPropagation()
+  function openScheduleEditor(plan) {
     setEditingPlan(plan)
-    setEditSchedule(plan.schedule.map(block => ({
-      day: block.day,
-      exercises: block.exercises.map(ex => ({ ...ex })),
-    })))
-  }
-
-  function updateDayLabel(dayIdx, value) {
-    setEditSchedule(prev => prev.map((b, i) => i === dayIdx ? { ...b, day: value } : b))
-  }
-
-  function updateExField(dayIdx, exIdx, field, value) {
-    setEditSchedule(prev => prev.map((b, i) =>
-      i !== dayIdx ? b : {
-        ...b,
-        exercises: b.exercises.map((ex, j) => j === exIdx ? { ...ex, [field]: value } : ex),
-      }
-    ))
-  }
-
-  function addExercise(dayIdx) {
-    setEditSchedule(prev => prev.map((b, i) =>
-      i !== dayIdx ? b : {
-        ...b,
-        exercises: [...b.exercises, { name: '', sets: 3, reps: '8-10' }],
-      }
-    ))
-  }
-
-  function removeExercise(dayIdx, exIdx) {
-    setEditSchedule(prev => prev.map((b, i) =>
-      i !== dayIdx ? b : {
-        ...b,
-        exercises: b.exercises.filter((_, j) => j !== exIdx),
-      }
-    ))
-  }
-
-  function addDay() {
-    setEditSchedule(prev => [...prev, { day: `Day ${prev.length + 1}`, exercises: [] }])
-  }
-
-  function removeDay(dayIdx) {
-    setEditSchedule(prev => prev.filter((_, i) => i !== dayIdx))
+    setEditSchedule(plan.schedule.map(b => ({ day: b.day, exercises: b.exercises.map(ex => ({ ...ex })) })))
+    setOpenMenuId(null)
   }
 
   async function saveSchedule() {
@@ -248,176 +244,195 @@ export function WorkoutLog({ userId }) {
     setSchedSaving(true)
     const ok = await updateWorkoutPlan(userId, editingPlan.id, { schedule: editSchedule })
     if (ok) {
-      setPlans(prev => prev.map(p =>
-        p.id === editingPlan.id ? { ...p, schedule: editSchedule } : p
-      ))
+      setPlans(prev => prev.map(p => p.id === editingPlan.id ? { ...p, schedule: editSchedule } : p))
       setEditingPlan(null)
     }
     setSchedSaving(false)
   }
 
-  // ── RENDER ──
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className={styles.wrap}>
-      <div className={styles.boardsPanel}>
 
-        {/* Top bar */}
-        <div className={styles.topbar}>
+      {/* HEADER */}
+      <div className={styles.header}>
+        <div className={styles.headerTop}>
           <div>
-            <h1 className={styles.topbarTitle}>WORKOUT PLANS</h1>
-            <div className={styles.dateLabel}>
-              {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
-            </div>
+            <h1 className={styles.title}>WORKOUT PLANS</h1>
+            <p className={styles.dateLabel}>{dateLabel}</p>
           </div>
-          <div className={styles.topbarBtns}>
-            <button className={styles.addBtnAi} onClick={() => setShowAiModal(true)}>✨ AI Plan</button>
-            <button className={styles.addBtn} onClick={() => setShowPlanModal(true)}>+ Add Plan</button>
+          <div className={styles.actions}>
+            <button className={styles.btn} onClick={() => setShowPlanModal(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              NEW PLAN
+            </button>
+            <button className={styles.btnAi} onClick={() => setShowAiModal(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/><path d="M19 14l.8 2.4L22 17l-2.2.6L19 20l-.8-2.4L16 17l2.2-.6z"/></svg>
+              AI PLAN
+            </button>
           </div>
-        </div>
-
-        {/* Plans list */}
-        <div className={styles.boardsContainer}>
-          {plans.map(plan => {
-            const isOpen = activePlanId === plan.id
-            return (
-              <div key={plan.id} className={styles.planCard} style={{ borderColor: isOpen ? plan.color + '55' : undefined }}>
-                <div className={styles.planHeader} onClick={() => setActivePlanId(isOpen ? null : plan.id)}>
-                  <div className={styles.planColorBar} style={{ background: plan.color }} />
-                  <div className={styles.planTitleWrap}>
-                    <div className={styles.planName}>{plan.name}</div>
-                    <div className={styles.planMeta}>
-                      <span className={styles.planTypeBadge} style={{ color: plan.color, borderColor: plan.color + '44' }}>
-                        {plan.type}
-                      </span>
-                      <span className={styles.planDurBadge}>{plan.duration}</span>
-                      <span className={styles.planDaysBadge}>{plan.daysPerWeek}x / week</span>
-                    </div>
-                  </div>
-                  <button
-                    className={`${styles.planCheckBtn} ${selectedPlanId === plan.id ? styles.planCheckBtnActive : ''}`}
-                    style={selectedPlanId === plan.id ? { borderColor: plan.color, color: plan.color } : {}}
-                    onClick={e => { e.stopPropagation(); setSelectedPlanId(id => id === plan.id ? null : plan.id) }}
-                    title="Set as active plan"
-                  >
-                    {selectedPlanId === plan.id ? '✓' : '○'}
-                  </button>
-                  <button className={styles.planEditBtn} onClick={e => openScheduleEditor(plan, e)} title="Edit schedule">✎</button>
-                  <button className={styles.planDeleteBtn} onClick={e => deletePlan(plan.id, e)}>✕</button>
-                  <span className={`${styles.toggle} ${isOpen ? styles.toggleOpen : ''}`}>▾</span>
-                </div>
-
-                {isOpen && (
-                  <div className={styles.planBody}>
-                    {plan.description && (
-                      <p className={styles.planDesc}>{plan.description}</p>
-                    )}
-                    <div className={styles.planSchedule}>
-                      {plan.schedule.length === 0 && (
-                        <div className={styles.planEmpty}>No schedule added yet.</div>
-                      )}
-                      {plan.schedule.map((block, i) => (
-                        <div key={i} className={styles.planDay}>
-                          <div className={styles.planDayHeader} style={{ color: plan.color }}>
-                            {block.day}
-                          </div>
-                          <table className={styles.planTable}>
-                            <thead>
-                              <tr>
-                                <th>Exercise</th>
-                                <th>Sets</th>
-                                <th>Reps</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {block.exercises.map((ex, j) => (
-                                <tr key={j} className={styles.planExRow}>
-                                  <td className={styles.planExName}>{ex.name}</td>
-                                  <td className={styles.planExVal}>{ex.sets}</td>
-                                  <td className={styles.planExVal}>{ex.reps}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {plans.length === 0 && (
-            <div className={styles.emptyState}>
-              No workout plans yet. Tap <strong>+ Add Plan</strong> to create one,<br />or ask the AI assistant to generate a program for you.
-            </div>
-          )}
         </div>
       </div>
+
+      {/* CONTENT */}
+      <div className={styles.content}>
+
+        {/* ACTIVE PLAN */}
+        {activePlan ? (
+          <>
+            <div className={styles.sectionLabel}>
+              <span>ACTIVE PLAN</span>
+              <span>WEEK {weekNumber()}</span>
+            </div>
+
+            <div className={styles.activeCard}>
+              {/* Left accent bar */}
+              <div className={styles.activeBar} />
+
+              {/* Hero */}
+              <div className={styles.activeHero}>
+                <div className={styles.activeStatus}>
+                  <span className={styles.activePill}>ACTIVE</span>
+                  <div className={styles.activeIcons}>
+                    <button className={styles.iconBtn} onClick={() => openScheduleEditor(activePlan)} title="Edit schedule">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button className={styles.iconBtn} onClick={() => setOpenMenuId(openMenuId === activePlan.id ? null : activePlan.id)} title="More options">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+                    </button>
+                    {openMenuId === activePlan.id && (
+                      <div className={styles.dropMenu}>
+                        <button className={styles.dropItem} onClick={() => { setSelectedPlanId(null); setOpenMenuId(null) }}>Deactivate</button>
+                        <button className={`${styles.dropItem} ${styles.dropItemDanger}`} onClick={() => deletePlan(activePlan.id)}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className={styles.activeName}>{activePlan.name}</div>
+                <div className={styles.activeMeta}>
+                  <span className={styles.metaTag}>{activePlan.type?.toUpperCase()}</span>
+                  <span className={styles.metaTag}>{activePlan.duration?.toUpperCase()}</span>
+                  <span className={styles.metaTag}>{activePlan.daysPerWeek}× / WEEK</span>
+                </div>
+              </div>
+
+              {/* Weekly schedule grid */}
+              <div className={styles.scheduleSection}>
+                <div className={styles.scheduleHeader}>
+                  <span className={styles.scheduleTitle}>THIS WEEK</span>
+                  <span className={styles.scheduleWeek}>{today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toUpperCase()}</span>
+                </div>
+                <div className={styles.scheduleGrid}>
+                  {weekGrid.map(({ dow, block, isToday, isDone }) => (
+                    <div
+                      key={dow}
+                      className={`${styles.day} ${isToday ? styles.dayToday : isDone ? styles.dayDone : ''}`}
+                    >
+                      <div className={styles.dayLabel}>{dow}</div>
+                      <div className={`${styles.dayName} ${!block ? styles.dayRest : ''}`}>
+                        {block ? block.day.toUpperCase().slice(0, 4) : 'REST'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div className={styles.progressSection}>
+                <div className={styles.progressRow}>
+                  <span className={styles.progressLabel}>THIS WEEK</span>
+                  <span className={styles.progressValue}>{doneThisWeek} / {trainingDaysThisWeek} SESSIONS · {weekPct}%</span>
+                </div>
+                <div className={styles.progressBar}>
+                  <div className={styles.progressFill} style={{ width: `${weekPct}%` }} />
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className={styles.noActivePlan}>
+            No active plan. Activate one below or create a new plan.
+          </div>
+        )}
+
+        {/* SAVED PLANS */}
+        {savedPlans.length > 0 && (
+          <>
+            <div className={styles.sectionLabel}>
+              <span>SAVED</span>
+              <span>{savedPlans.length} {savedPlans.length === 1 ? 'PLAN' : 'PLANS'}</span>
+            </div>
+            <div className={styles.savedList}>
+              {savedPlans.map(plan => (
+                <div key={plan.id} className={styles.savedRow}>
+                  <div className={styles.savedRowMain}>
+                    <div className={styles.savedName}>{plan.name}</div>
+                    <div className={styles.savedMeta}>
+                      <span className={styles.savedTag}>{plan.type?.toUpperCase()}</span>
+                      <span className={styles.savedTag}>{plan.duration?.toUpperCase()}</span>
+                      <span className={styles.savedTag}>{plan.daysPerWeek}× / WEEK</span>
+                    </div>
+                  </div>
+                  <div className={styles.savedActions}>
+                    <button className={styles.activateBtn} onClick={() => setSelectedPlanId(plan.id)}>ACTIVATE</button>
+                    <div className={styles.menuWrap}>
+                      <button className={styles.iconBtn} onClick={() => setOpenMenuId(openMenuId === plan.id ? null : plan.id)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+                      </button>
+                      {openMenuId === plan.id && (
+                        <div className={styles.dropMenu}>
+                          <button className={styles.dropItem} onClick={() => openScheduleEditor(plan)}>Edit schedule</button>
+                          <button className={`${styles.dropItem} ${styles.dropItemDanger}`} onClick={() => deletePlan(plan.id)}>Delete</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {plans.length === 0 && (
+          <div className={styles.emptyState}>
+            No plans yet. Tap <strong>NEW PLAN</strong> to create one or use <strong>AI PLAN</strong>.
+          </div>
+        )}
+      </div>
+
+      {/* click-away overlay for menus */}
+      {openMenuId && <div className={styles.menuOverlay} onClick={() => setOpenMenuId(null)} />}
 
       {/* ── SCHEDULE EDITOR MODAL ── */}
       {editingPlan && (
         <div className={styles.modalBackdrop} onClick={() => !schedSaving && setEditingPlan(null)}>
           <div className={`${styles.modalBox} ${styles.scheduleModal}`} onClick={e => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>Edit Schedule · {editingPlan.name}</h3>
-
+            <h3 className={styles.modalTitle}>EDIT SCHEDULE</h3>
+            <p className={styles.modalSub}>{editingPlan.name}</p>
             <div className={styles.scheduleEditor}>
               {editSchedule.map((block, dayIdx) => (
                 <div key={dayIdx} className={styles.schedDay}>
                   <div className={styles.schedDayHeader}>
-                    <input
-                      className={`${styles.input} ${styles.schedDayInput}`}
-                      value={block.day}
-                      onChange={e => updateDayLabel(dayIdx, e.target.value)}
-                      placeholder="Day label (e.g. Push)"
-                    />
-                    <button className={styles.schedRemoveDay} onClick={() => removeDay(dayIdx)}>✕</button>
+                    <input className={`${styles.input} ${styles.schedDayInput}`} value={block.day} onChange={e => setEditSchedule(prev => prev.map((b, i) => i === dayIdx ? { ...b, day: e.target.value } : b))} placeholder="Day label"/>
+                    <button className={styles.schedRemove} onClick={() => setEditSchedule(prev => prev.filter((_, i) => i !== dayIdx))}>✕</button>
                   </div>
-
                   {block.exercises.map((ex, exIdx) => (
                     <div key={exIdx} className={styles.schedExRow}>
-                      <input
-                        className={`${styles.input} ${styles.schedExName}`}
-                        value={ex.name}
-                        onChange={e => updateExField(dayIdx, exIdx, 'name', e.target.value)}
-                        placeholder="Exercise name"
-                      />
-                      <input
-                        className={`${styles.input} ${styles.schedExSmall}`}
-                        type="number"
-                        min="1"
-                        value={ex.sets}
-                        onChange={e => updateExField(dayIdx, exIdx, 'sets', Number(e.target.value))}
-                        placeholder="Sets"
-                      />
-                      <input
-                        className={`${styles.input} ${styles.schedExSmall}`}
-                        value={ex.reps}
-                        onChange={e => updateExField(dayIdx, exIdx, 'reps', e.target.value)}
-                        placeholder="Reps"
-                      />
-                      <button className={styles.schedRemoveEx} onClick={() => removeExercise(dayIdx, exIdx)}>✕</button>
+                      <input className={`${styles.input} ${styles.schedExName}`} value={ex.name} onChange={e => setEditSchedule(prev => prev.map((b, i) => i !== dayIdx ? b : { ...b, exercises: b.exercises.map((x, j) => j === exIdx ? { ...x, name: e.target.value } : x) }))} placeholder="Exercise"/>
+                      <input className={`${styles.input} ${styles.schedExSmall}`} type="number" min="1" value={ex.sets} onChange={e => setEditSchedule(prev => prev.map((b, i) => i !== dayIdx ? b : { ...b, exercises: b.exercises.map((x, j) => j === exIdx ? { ...x, sets: Number(e.target.value) } : x) }))} placeholder="Sets"/>
+                      <input className={`${styles.input} ${styles.schedExSmall}`} value={ex.reps} onChange={e => setEditSchedule(prev => prev.map((b, i) => i !== dayIdx ? b : { ...b, exercises: b.exercises.map((x, j) => j === exIdx ? { ...x, reps: e.target.value } : x) }))} placeholder="Reps"/>
+                      <button className={styles.schedRemove} onClick={() => setEditSchedule(prev => prev.map((b, i) => i !== dayIdx ? b : { ...b, exercises: b.exercises.filter((_, j) => j !== exIdx) }))}>✕</button>
                     </div>
                   ))}
-
-                  <button className={styles.schedAddEx} onClick={() => addExercise(dayIdx)}>
-                    + Add Exercise
-                  </button>
+                  <button className={styles.schedAddEx} onClick={() => setEditSchedule(prev => prev.map((b, i) => i !== dayIdx ? b : { ...b, exercises: [...b.exercises, { name: '', sets: 3, reps: '8-10' }] }))}>+ Add Exercise</button>
                 </div>
               ))}
-
-              <button className={styles.schedAddDay} onClick={addDay}>
-                + Add Day
-              </button>
+              <button className={styles.schedAddDay} onClick={() => setEditSchedule(prev => [...prev, { day: `Day ${prev.length + 1}`, exercises: [] }])}>+ Add Day</button>
             </div>
-
             <div className={styles.modalBtns}>
-              <button className={styles.btnSave} onClick={saveSchedule} disabled={schedSaving}>
-                {schedSaving ? 'Saving…' : 'Save Schedule'}
-              </button>
-              <button className={styles.btnCancel} onClick={() => setEditingPlan(null)} disabled={schedSaving}>
-                Cancel
-              </button>
+              <button className={styles.btnSave} onClick={saveSchedule} disabled={schedSaving}>{schedSaving ? 'Saving…' : 'Save'}</button>
+              <button className={styles.btnCancel} onClick={() => setEditingPlan(null)} disabled={schedSaving}>Cancel</button>
             </div>
           </div>
         </div>
@@ -427,32 +442,23 @@ export function WorkoutLog({ userId }) {
       {showAiModal && (
         <div className={styles.modalBackdrop} onClick={() => { setShowAiModal(false); setAiError('') }}>
           <div className={styles.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>✨ AI Plan Generator</h3>
+            <h3 className={styles.modalTitle}>AI PLAN GENERATOR</h3>
             <label className={styles.label}>Describe your plan</label>
-            <textarea
-              className={styles.aiTextarea}
-              value={aiPrompt}
-              onChange={e => setAiPrompt(e.target.value)}
-              placeholder="e.g. A 4-day upper/lower split for building strength over 8 weeks, intermediate level"
-              rows={4}
-              onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) generateAiPlan() }}
-            />
+            <textarea className={styles.aiTextarea} value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="e.g. A 4-day upper/lower split for building strength over 8 weeks, intermediate level" rows={4} onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) generateAiPlan() }}/>
             {aiError && <div className={styles.aiError}>{aiError}</div>}
             <div className={styles.modalBtns}>
-              <button className={styles.btnSave} onClick={generateAiPlan} disabled={aiLoading}>
-                {aiLoading ? 'Generating…' : 'Generate Plan'}
-              </button>
+              <button className={styles.btnSave} onClick={generateAiPlan} disabled={aiLoading}>{aiLoading ? 'Generating…' : 'Generate'}</button>
               <button className={styles.btnCancel} onClick={() => { setShowAiModal(false); setAiError('') }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── ADD PLAN MODAL ── */}
+      {/* ── NEW PLAN MODAL ── */}
       {showPlanModal && (
         <div className={styles.modalBackdrop} onClick={() => setShowPlanModal(false)}>
           <div className={styles.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>New Workout Plan</h3>
+            <h3 className={styles.modalTitle}>NEW WORKOUT PLAN</h3>
             <label className={styles.label}>Plan Name</label>
             <input className={styles.input} value={planName} onChange={e => setPlanName(e.target.value)} placeholder="e.g. PPL Program"/>
             <label className={styles.label}>Type</label>
@@ -468,12 +474,11 @@ export function WorkoutLog({ userId }) {
               </div>
             </div>
             <label className={styles.label}>Description</label>
-            <input className={styles.input} value={planDesc} onChange={e => setPlanDesc(e.target.value)} placeholder="Optional description…"/>
+            <input className={styles.input} value={planDesc} onChange={e => setPlanDesc(e.target.value)} placeholder="Optional…"/>
             <label className={styles.label}>Accent Color</label>
             <div className={styles.colorRow}>
               {ACCENT_COLORS.map(c => (
-                <div key={c} className={`${styles.swatch} ${c===planColor ? styles.swatchSel : ''}`}
-                  style={{ background: c }} onClick={() => setPlanColor(c)}/>
+                <div key={c} className={`${styles.swatch} ${c === planColor ? styles.swatchSel : ''}`} style={{ background: c }} onClick={() => setPlanColor(c)}/>
               ))}
             </div>
             <div className={styles.modalBtns}>

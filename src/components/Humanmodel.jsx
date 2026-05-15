@@ -20,14 +20,12 @@ function createCircleGlowTexture() {
 }
 
 const COLORS = {
-  high: new THREE.Color(0x39ff14),
-  med:  new THREE.Color(0x00e5ff),
-  low:  new THREE.Color(0xff3d71),
-
-  rest: new THREE.Color(0x888888),
+  high: new THREE.Color(0x00ff66),
+  med:  new THREE.Color(0x00d9ff),
+  low:  new THREE.Color(0xff5b1f),
 }
 
-const LEVEL_RANK = { rest: 0, low: 1, med: 2, high: 3 }
+const LEVEL_RANK = { low: 0, med: 1, high: 2 }
 
 function getMuscleGroup(name, muscleData) {
   const n = name.toLowerCase()
@@ -108,22 +106,24 @@ useEffect(() => {
     const n = child.name.toLowerCase()
     if (n === 'absmesh003' || n === 'absmesh003_1') return
     const group = getMuscleGroup(child.name, muscleData)
-    if (group && muscleData[group] && muscleData[group] !== 'rest') {
-      const color = COLORS[muscleData[group]]
+    if (!group) {
       child.material.map = null
-      child.material.color.set(color)
-      child.material.roughness = 0.6
+      child.material.color.set(new THREE.Color(0x3a3a3a))
+      child.material.roughness = 0.9
       child.material.metalness = 0.1
       child.material.emissive = new THREE.Color(0x000000)
       child.material.emissiveIntensity = 0
-    } else {
-      child.material.map = null
-      child.material.color.set(COLORS.rest)
-      child.material.roughness = 0.9
-      child.material.metalness = 0.7
-      child.material.emissive = new THREE.Color(0x000000)
-      child.material.emissiveIntensity = 0
+      child.material.needsUpdate = true
+      return
     }
+    const level = muscleData[group] || 'low'
+    const color = COLORS[level] ?? COLORS.low
+    child.material.map = null
+    child.material.color.set(color)
+    child.material.roughness = 0.6
+    child.material.metalness = 0.1
+    child.material.emissive = new THREE.Color(0x000000)
+    child.material.emissiveIntensity = 0
     child.material.needsUpdate = true
   })
 }, [scene, muscleData])

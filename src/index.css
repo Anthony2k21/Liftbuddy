@@ -5,9 +5,9 @@
 :root {
   --bg: #000000;
   --surface: #0a0a0a;
-  --accent: #00e5ff;
-  --accent2: #ff3d71;
-  --accent3: #39ff14;
+  --accent: #00d9ff;    /* MED  — cyan */
+  --accent2: #ff5b1f;   /* LOW  — red-orange */
+  --accent3: #00ff66;   /* HIGH — neon green */
   --text: #e8edf2;
   --muted: #4a5568;
 }

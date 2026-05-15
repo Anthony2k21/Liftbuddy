@@ -280,7 +280,6 @@
 .dotHigh { background: var(--accent3); box-shadow: 0 0 8px var(--accent3); }
 .dotMed  { background: var(--accent);  box-shadow: 0 0 8px var(--accent);  }
 .dotLow  { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
-.dotRest { background: var(--muted); }
 
 /* ── MUSCLE TAGS BAR ─────────────────────────────────────────────────────── */
 

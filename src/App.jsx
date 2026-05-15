@@ -4,7 +4,6 @@ import { HumanModel } from './components/Humanmodel'
 import { WorkoutModal } from './components/WorkoutModal'
 import { TabBar } from './components/TabBar'
 import { WorkoutLog } from './components/WorkoutLog'
-import { DailyTracker } from './components/DailyTracker'
 import { Progress } from './pages/Progress'
 import { Settings } from './components/Settings'
 import { useWorkoutHistory } from './hooks/useWorkoutHistory'
@@ -17,12 +16,12 @@ import './index.css'
 import styles from './App.module.css'
 
 const INITIAL_MUSCLE_DATA = {
-  chest:     'rest',
-  shoulders: 'rest',
-  abs:       'rest',
-  arms:      'rest',
-  back:      'rest',
-  legs:      'rest',
+  chest:     'low',
+  shoulders: 'low',
+  abs:       'low',
+  arms:      'low',
+  back:      'low',
+  legs:      'low',
 }
 
 function todayKey() {
@@ -30,13 +29,13 @@ function todayKey() {
 }
 
 function setsToLevel(count) {
-  if (count === 0) return 'rest'
+  if (count === 0) return 'low'
   if (count <= 2)  return 'low'
   if (count <= 5)  return 'med'
   return 'high'
 }
 
-const LEVEL_RANK = { rest: 0, low: 1, med: 2, high: 3 }
+const LEVEL_RANK = { low: 0, med: 1, high: 2 }
 function maxLevel(a, b) {
   return LEVEL_RANK[a] >= LEVEL_RANK[b] ? a : b
 }
@@ -52,7 +51,7 @@ function computeWeeklyDisplay(calendar, todayData) {
     const key     = d.toISOString().slice(0, 10)
     const dayData = key === todayKey() ? todayData : (calendar[key] || {})
     for (const muscle of Object.keys(result)) {
-      result[muscle] = maxLevel(result[muscle], dayData[muscle] || 'rest')
+      result[muscle] = maxLevel(result[muscle], dayData[muscle] || 'low')
     }
   }
   return result
@@ -283,7 +282,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     : todayPlanInfo?.planName?.toUpperCase() || 'SET UP A PLAN IN PLANS TAB'
 
   const activeMuscleLabels = Object.entries(weekDisplayData)
-    .filter(([, lvl]) => lvl !== 'rest')
+    .filter(([, lvl]) => lvl !== 'low')
     .map(([m]) => m.toUpperCase())
     .join(' · ')
 
@@ -400,7 +399,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
                 } else if (todayPlanInfo?.allSchedule?.length > 0) {
                   setShowDayPicker(true)
                 } else {
-                  setActiveTab('tracker')
+                  setActiveTab('log')
                 }
               }}
             >
@@ -432,7 +431,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
             { cls: styles.dotHigh, label: 'HIGH' },
             { cls: styles.dotMed,  label: 'MED'  },
             { cls: styles.dotLow,  label: 'LOW'  },
-            { cls: styles.dotRest, label: 'REST' },
           ].map(({ cls, label }) => (
             <div key={label} className={styles.legendItem}>
               <div className={`${styles.dot} ${cls}`} />
@@ -496,25 +494,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       {activeTab === 'log' && (
         <div className={styles.assistantWrap}>
           <WorkoutLog userId={userId} />
-        </div>
-      )}
-
-      {activeTab === 'tracker' && (
-        <div className={styles.assistantWrap}>
-          <DailyTracker
-            userId={userId}
-            onMuscleUpdate={(part, level) => setMuscleData(prev => ({ ...prev, [part]: level }))}
-            onSessionUpdate={(part, sets, date) => {
-              if (!date || date === todayKey()) {
-                const newSessionData = { ...sessionData, [part]: sets }
-                setSessionData(newSessionData)
-                const { score } = calculateSessionRating(newSessionData, history)
-                const today = todayKey()
-                Object.keys(newSessionData).forEach(mg => saveSessionRating(userId, today, mg, score))
-              }
-              logSession({ muscleGroup: part, sets }, date)
-            }}
-          />
         </div>
       )}
 

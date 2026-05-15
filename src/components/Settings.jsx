@@ -3,8 +3,8 @@ import { saveMuscleDay } from '../lib/db'
 import styles from './Settings.module.css'
 
 const INITIAL_MUSCLE_DATA = {
-  chest: 'rest', shoulders: 'rest', abs: 'rest',
-  arms: 'rest', back: 'rest', legs: 'rest',
+  chest: 'low', shoulders: 'low', abs: 'low',
+  arms: 'low', back: 'low', legs: 'low',
 }
 
 function todayKey() {
