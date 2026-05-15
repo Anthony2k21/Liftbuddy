@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createSession, endSession, logSet, deleteSet, updateSetRecord } from '../lib/supabase/sessions'
+import { createSession, endSession, logSet, deleteSet, updateSetRecord, getTodaySession, getSessionSets } from '../lib/supabase/sessions'
 
 function makeLocalId() {
   return Math.random().toString(36).slice(2)
@@ -13,6 +13,35 @@ function parseDefaultReps(repsStr) {
   if (!repsStr) return ''
   const match = String(repsStr).match(/\d+/)
   return match ? match[0] : ''
+}
+
+function mergeExistingSets(initialSets, existingRows) {
+  const byExercise = {}
+  for (const row of existingRows) {
+    if (!byExercise[row.exercise_name]) byExercise[row.exercise_name] = []
+    byExercise[row.exercise_name].push(row)
+  }
+  const merged = {}
+  for (const [exName, planSets] of Object.entries(initialSets)) {
+    const logged = (byExercise[exName] || []).slice().sort((a, b) => a.set_number - b.set_number)
+    const updatedPlanSets = planSets.map(planSet => {
+      const match = logged.find(l => l.set_number === planSet.setNumber)
+      if (match) {
+        return { ...planSet, id: match.id, weight: match.weight != null ? String(match.weight) : '', reps: match.reps != null ? String(match.reps) : '', done: true }
+      }
+      return planSet
+    })
+    const extraSets = logged
+      .filter(l => l.set_number > planSets.length)
+      .map(extra => ({
+        id: extra.id, localId: makeLocalId(), setNumber: extra.set_number,
+        weight: extra.weight != null ? String(extra.weight) : '',
+        reps: extra.reps != null ? String(extra.reps) : '',
+        done: true, saving: false,
+      }))
+    merged[exName] = [...updatedPlanSets, ...extraSets]
+  }
+  return merged
 }
 
 function buildInitialSets(exercises) {
@@ -43,9 +72,27 @@ export function useWorkoutSession(userId, planId, exercises, dayLabel) {
 
   useEffect(() => {
     if (!userId) return
-    createSession(userId, planId, dayLabel).then(session => {
-      if (session) setSessionId(session.id)
-    })
+    async function initSession() {
+      const existing = await getTodaySession(userId, dayLabel)
+      if (existing) {
+        setSessionId(existing.id)
+        // Restore elapsed time from session start
+        startTime.current = new Date(existing.started_at).getTime()
+        // Re-hydrate logged sets from saved data
+        const rows = await getSessionSets(existing.id)
+        if (rows.length > 0) {
+          setLoggedSets(prev => mergeExistingSets(prev, rows))
+          // Jump to first exercise that still has incomplete sets
+          const initial = mergeExistingSets(buildInitialSets(exercises), rows)
+          const firstIncomplete = exercises.findIndex(ex => (initial[ex.exercise] || []).some(s => !s.done))
+          if (firstIncomplete > 0) setCurrentIndex(firstIncomplete)
+        }
+      } else {
+        const session = await createSession(userId, planId, dayLabel)
+        if (session) setSessionId(session.id)
+      }
+    }
+    initSession()
   }, []) // intentionally run once on mount
 
   useEffect(() => {

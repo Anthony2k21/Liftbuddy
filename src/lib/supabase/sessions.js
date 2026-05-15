@@ -56,6 +56,33 @@ export async function deleteSet(setId) {
   if (error) console.error('deleteSet', error)
 }
 
+export async function getTodaySession(userId, dayLabel) {
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('day_label', dayLabel)
+    .gte('started_at', startOfToday.toISOString())
+    .is('ended_at', null)
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) { console.error('getTodaySession', error); return null }
+  return data
+}
+
+export async function getSessionSets(sessionId) {
+  const { data, error } = await supabase
+    .from('sets')
+    .select('id, exercise_name, set_number, weight, reps, logged_at')
+    .eq('session_id', sessionId)
+    .order('logged_at', { ascending: true })
+  if (error) { console.error('getSessionSets', error); return [] }
+  return data || []
+}
+
 export async function getExerciseHistory(userId, exerciseName, limit = 5) {
   const { data: userSessions, error: sessErr } = await supabase
     .from('sessions')
