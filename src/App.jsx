@@ -89,6 +89,7 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   const [activeModal, setActiveModal]       = useState(null)
   const { logSession, history }             = useWorkoutHistory(userId)
   const calendarCacheRef                    = useRef({})
+  const initialLoadedRef                    = useRef(false)
 
   const [displayName, setDisplayName] = useState(
     () => localStorage.getItem(`displayName_${userId}`) || userName
@@ -99,16 +100,21 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     getMuscleCalendar(userId).then(calendar => {
       calendarCacheRef.current = calendar
       const today = calendar[todayKey()] || INITIAL_MUSCLE_DATA
+      initialLoadedRef.current = true
       setMuscleData(today)
       setWeekDisplayData(computeWeeklyDisplay(calendar, today))
     })
   }, [userId])
 
   // Immediately update weekDisplayData from cache so the 3D model reflects
-  // the new workout without waiting for a Supabase round-trip
+  // the new workout without waiting for a Supabase round-trip.
+  // Guard saveMuscleDay so the initial INITIAL_MUSCLE_DATA state never
+  // overwrites real data in Supabase before the load completes.
   useEffect(() => {
     setWeekDisplayData(computeWeeklyDisplay(calendarCacheRef.current, muscleData))
-    saveMuscleDay(userId, todayKey(), muscleData)
+    if (initialLoadedRef.current) {
+      saveMuscleDay(userId, todayKey(), muscleData)
+    }
   }, [muscleData, userId])
   const [activeTab, setActiveTab]     = useState('workout')
   const [autoRotate, setAutoRotate]   = useState(true)
