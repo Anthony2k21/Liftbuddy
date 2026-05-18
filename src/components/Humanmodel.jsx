@@ -23,8 +23,6 @@ const COLORS = {
   high: new THREE.Color(0x39ff14),
   med:  new THREE.Color(0x00e5ff),
   low:  new THREE.Color(0xff3d71),
-
-  rest: new THREE.Color(0x888888),
 }
 
 const LEVEL_RANK = { rest: 0, low: 1, med: 2, high: 3 }
@@ -116,15 +114,8 @@ useEffect(() => {
       child.material.metalness = 0.1
       child.material.emissive = new THREE.Color(0x000000)
       child.material.emissiveIntensity = 0
-    } else {
-      child.material.map = null
-      child.material.color.set(COLORS.rest)
-      child.material.roughness = 0.9
-      child.material.metalness = 0.7
-      child.material.emissive = new THREE.Color(0x000000)
-      child.material.emissiveIntensity = 0
+      child.material.needsUpdate = true
     }
-    child.material.needsUpdate = true
   })
 }, [scene, muscleData])
 

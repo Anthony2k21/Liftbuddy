@@ -370,7 +370,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
             { cls: styles.dotHigh, label: 'High' },
             { cls: styles.dotMed,  label: 'Med'  },
             { cls: styles.dotLow,  label: 'Low'  },
-            { cls: styles.dotRest, label: 'Rest' },
           ].map(({ cls, label }) => (
             <div key={label} className={styles.legendItem}>
               <div className={`${styles.dot} ${cls}`} />
