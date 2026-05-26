@@ -11,6 +11,7 @@ import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { getMuscleCalendar, saveMuscleDay, saveSessionRating, getSelectedPlanId, getWorkoutPlans } from './lib/db'
 import { getTodaySession, fetchWeeklySets } from './lib/supabase/sessions'
+import { supabase } from './lib/supabase'
 import { calculateSessionRating } from './utils/calculateSessionRating'
 import { WorkoutMode } from './pages/WorkoutMode'
 import './index.css'
@@ -250,19 +251,46 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   }, [userId])
 
   // ── Stats ──────────────────────────────────────────────────────────────────
-  const streak = useMemo(() => {
-    if (!history.length) return 0
-    const dateSet = new Set(history.map(h => h.date).filter(Boolean))
-    let count = 0
-    const today = new Date()
-    for (let i = 0; ; i++) {
-      const d = new Date(today)
-      d.setDate(today.getDate() - i)
-      if (dateSet.has(d.toISOString().slice(0, 10))) count++
-      else break
+  const [streak, setStreak] = useState(0)
+
+  useEffect(() => {
+    async function computeStreak() {
+      const { data } = await supabase
+        .from('sets')
+        .select('logged_at')
+        .eq('user_id', userId)
+        .order('logged_at', { ascending: false })
+        .limit(200)
+
+      if (!data || data.length === 0) return setStreak(0)
+
+      const trainedDates = new Set(
+        data.map(s => s.logged_at.split('T')[0])
+      )
+
+      let count = 0
+      const cursor = new Date()
+      cursor.setHours(0, 0, 0, 0)
+
+      while (true) {
+        const day = cursor.toISOString().split('T')[0]
+        if (trainedDates.has(day)) {
+          count++
+          cursor.setDate(cursor.getDate() - 1)
+        } else if (count === 0) {
+          cursor.setDate(cursor.getDate() - 1)
+          const yesterday = cursor.toISOString().split('T')[0]
+          if (!trainedDates.has(yesterday)) break
+        } else {
+          break
+        }
+      }
+
+      setStreak(count)
     }
-    return count
-  }, [history])
+
+    computeStreak()
+  }, [userId])
 
   const weeklyVolume = useMemo(() => {
     const today = new Date()
