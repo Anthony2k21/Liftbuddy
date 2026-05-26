@@ -38,6 +38,15 @@ function applyAutoRatings(history) {
   }
 }
 
+function inferTodayDayType(history) {
+  const today = new Date().toISOString().slice(0, 10)
+  const groups = new Set(history.filter(h => h.date === today).map(h => h.muscleGroup))
+  if (groups.has('chest') || groups.has('shoulders')) return 'push'
+  if (groups.has('back')) return 'pull'
+  if (groups.has('legs')) return 'legs'
+  return 'all'
+}
+
 export function Progress({ userId }) {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
@@ -84,7 +93,7 @@ export function Progress({ userId }) {
           </div>
 
           <div className={styles.section}>
-            <WeightProgressChart userId={userId} />
+            <WeightProgressChart userId={userId} defaultDayType={inferTodayDayType(history)} />
           </div>
 
           <div className={styles.row}>

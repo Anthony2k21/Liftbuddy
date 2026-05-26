@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { fetchProgressHistory } from '../lib/supabase/progress'
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis,
@@ -121,10 +121,17 @@ function CustomTooltip({ active, payload, label, exerciseData }) {
   )
 }
 
-export function WeightProgressChart({ userId, compact = false, filterExercises = null }) {
+export function WeightProgressChart({ userId, compact = false, filterExercises = null, defaultDayType = 'all' }) {
   const [history, setHistory] = useState([])
   const [selectedEx, setSelectedEx] = useState('all')
   const [selectedDayType, setSelectedDayType] = useState('all')
+  const userSelectedRef = useRef(false)
+
+  useEffect(() => {
+    if (!userSelectedRef.current && defaultDayType && defaultDayType !== 'all') {
+      setSelectedDayType(defaultDayType)
+    }
+  }, [defaultDayType])
 
   const refresh = useCallback(() => {
     if (!userId) return
@@ -160,6 +167,7 @@ export function WeightProgressChart({ userId, compact = false, filterExercises =
 
   // Reset exercise filter when day type changes
   const handleDayTypeChange = (key) => {
+    userSelectedRef.current = true
     setSelectedDayType(key)
     setSelectedEx('all')
   }
