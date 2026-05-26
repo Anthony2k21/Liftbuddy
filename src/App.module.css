@@ -285,7 +285,7 @@
 
 .muscleTagsBar {
   position: absolute;
-  bottom: 10px;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
@@ -299,6 +299,86 @@
   color: var(--muted);
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* ── WEEK DAY CIRCLES ─────────────────────────────────────────────────────── */
+
+.weekDayBar {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.weekDayItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.weekDayCircle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.weekDayLabel {
+  font-size: 0.46rem;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.22);
+  text-transform: uppercase;
+}
+
+.dayPush {
+  background: rgba(79, 108, 255, 0.18);
+  border-color: #4f6cff;
+  color: #4f6cff;
+  box-shadow: 0 0 8px rgba(79, 108, 255, 0.35);
+}
+
+.dayPull {
+  background: rgba(165, 107, 255, 0.18);
+  border-color: #a56bff;
+  color: #a56bff;
+  box-shadow: 0 0 8px rgba(165, 107, 255, 0.35);
+}
+
+.dayLegs {
+  background: rgba(57, 255, 20, 0.12);
+  border-color: #39ff14;
+  color: #39ff14;
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.3);
+}
+
+.dayWork {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: #00e5ff;
+  color: #00e5ff;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+
+.dayRest {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.dayToday {
+  border-width: 2px;
+  filter: brightness(1.25);
+  box-shadow: 0 0 14px currentColor;
 }
 
 /* ── ARC UI ──────────────────────────────────────────────────────────────── */
@@ -346,7 +426,7 @@
 
 .hint {
   position: absolute;
-  bottom: 46px;
+  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;

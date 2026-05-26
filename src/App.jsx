@@ -117,6 +117,36 @@ function inferWorkoutType(exercises) {
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+const FREQ_MAP = { 1:[0],2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4],6:[0,1,2,3,4,5],7:[0,1,2,3,4,5,6] }
+
+function getWorkoutLetter(exercises) {
+  const type = inferWorkoutType(exercises)
+  if (type === 'PUSH DAY') return 'P'
+  if (type === 'PULL DAY') return 'L'
+  if (type === 'LEG DAY') return 'G'
+  if (exercises?.length > 0) return 'W'
+  return null
+}
+
+function buildWeekMap(planInfo) {
+  if (!planInfo?.allSchedule?.length) return Array(7).fill(null)
+  const { allSchedule, weekAssignment, daysPerWeek } = planInfo
+  const result = Array(7).fill(null)
+  if (weekAssignment) {
+    for (let dow = 0; dow < 7; dow++) {
+      const idx = weekAssignment[dow]
+      if (idx != null && allSchedule[idx]) result[dow] = allSchedule[idx]
+    }
+  } else {
+    const days = FREQ_MAP[daysPerWeek] || []
+    days.forEach((dow, i) => {
+      const slot = allSchedule[i % allSchedule.length]
+      if (slot) result[dow] = slot
+    })
+  }
+  return result
+}
+
 // Plan exercises use `name`; WorkoutMode expects `exercise`. Normalise at the boundary.
 function normalizeExercises(exs) {
   return (exs || []).map(ex => ({ ...ex, exercise: ex.exercise || ex.name || '' }))
@@ -205,10 +235,12 @@ function AppInner({ userName, userEmail, userId, signOut }) {
         }
 
         setTodayPlanInfo({
-          planId:      active.id,
-          planName:    active.name,
-          exercises:   normalizeExercises(daySchedule?.exercises || []),
-          allSchedule: active.schedule || [],
+          planId:         active.id,
+          planName:       active.name,
+          exercises:      normalizeExercises(daySchedule?.exercises || []),
+          allSchedule:    active.schedule || [],
+          weekAssignment: active.weekAssignment || null,
+          daysPerWeek:    active.daysPerWeek || 3,
         })
       } catch { setTodayPlanInfo(null) }
     }
@@ -346,6 +378,11 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     .filter(([, lvl]) => lvl !== 'low')
     .map(([m]) => m.toUpperCase())
     .join(' · ')
+
+  const todayDowMon = (new Date().getDay() + 6) % 7  // 0=Mon … 6=Sun
+  const weekMap     = buildWeekMap(todayPlanInfo)
+  const WEEK_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+  const LETTER_CLASS  = { P: styles.dayPush, L: styles.dayPull, G: styles.dayLegs, W: styles.dayWork }
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleSave({ muscleGroup, sets }) {
@@ -498,6 +535,22 @@ function AppInner({ userName, userEmail, userId, signOut }) {
               {label}
             </div>
           ))}
+        </div>
+
+        {/* ── WEEK DAY CIRCLES ── */}
+        <div className={styles.weekDayBar}>
+          {weekMap.map((slot, dow) => {
+            const letter = slot ? getWorkoutLetter(slot.exercises) : null
+            const isToday = dow === todayDowMon
+            return (
+              <div key={dow} className={styles.weekDayItem}>
+                <div className={`${styles.weekDayCircle} ${letter ? LETTER_CLASS[letter] : styles.dayRest} ${isToday ? styles.dayToday : ''}`}>
+                  {letter || '·'}
+                </div>
+                <span className={styles.weekDayLabel}>{WEEK_INITIALS[dow]}</span>
+              </div>
+            )
+          })}
         </div>
 
         {/* ── MUSCLE TAGS BAR ── */}
