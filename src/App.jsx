@@ -10,7 +10,7 @@ import { useWorkoutHistory } from './hooks/useWorkoutHistory'
 import { useAuth } from './contexts/AuthContext'
 import { AuthScreen } from './components/AuthScreen'
 import { getMuscleCalendar, saveMuscleDay, saveSessionRating, getSelectedPlanId, getWorkoutPlans } from './lib/db'
-import { getTodaySession } from './lib/supabase/sessions'
+import { getTodaySession, fetchWeeklySets } from './lib/supabase/sessions'
 import { calculateSessionRating } from './utils/calculateSessionRating'
 import { WorkoutMode } from './pages/WorkoutMode'
 import './index.css'
@@ -55,6 +55,49 @@ function computeWeeklyDisplay(calendar, todayData) {
       result[muscle] = maxLevel(result[muscle], dayData[muscle] || 'low')
     }
   }
+  return result
+}
+
+function inferMuscleGroupLocal(name) {
+  if (!name) return null
+  if (/bench|chest fly|pec deck|push.?up/i.test(name)) return 'chest'
+  if (/face pull|pull.?apart|lateral raise|front raise|shoulder|overhead press|military press|arnold/i.test(name)) return 'shoulders'
+  if (/back|row|lat pull|pull.?up|deadlift|rack pull|chin.?up/i.test(name)) return 'back'
+  if (/squat|leg press|lunge|hack squat|leg extension|hamstring|rdl|romanian|leg curl|glute|hip thrust|calf/i.test(name)) return 'legs'
+  if (/bicep|curl|tricep|pushdown|skull crusher|dip/i.test(name)) return 'arms'
+  if (/ab|crunch|plank|sit.?up|core|cable crunch/i.test(name)) return 'abs'
+  return null
+}
+
+function computeWeeklyDisplayFromSets(weeklySets) {
+  const result = { ...INITIAL_MUSCLE_DATA }
+  if (!weeklySets?.length) return result
+
+  const volumeByGroup = {}
+  const touchedGroups = new Set()
+
+  for (const s of weeklySets) {
+    const group = inferMuscleGroupLocal(s.exercise_name)
+    if (!group) continue
+    touchedGroups.add(group)
+    const vol = (Number(s.weight) || 0) * (Number(s.reps) || 0)
+    volumeByGroup[group] = (volumeByGroup[group] || 0) + vol
+  }
+
+  const maxVol = Math.max(...Object.values(volumeByGroup), 1)
+  
+  for (const group of touchedGroups) {
+    const vol = volumeByGroup[group] || 0
+    if (vol === 0) {
+      result[group] = 'low'
+    } else {
+      const ratio = vol / maxVol
+      if (ratio > 0.66) result[group] = 'high'
+      else if (ratio > 0.25) result[group] = 'med'
+      else result[group] = 'low'
+    }
+  }
+
   return result
 }
 
@@ -218,18 +261,28 @@ function AppInner({ userName, userEmail, userId, signOut }) {
   // ── Muscle calendar ────────────────────────────────────────────────────────
   useEffect(() => {
     getMuscleCalendar(userId).then(calendar => {
-      const today = calendar[todayKey()] || INITIAL_MUSCLE_DATA
-      setMuscleData(today)
-      setWeekDisplayData(computeWeeklyDisplay(calendar, today))
+      setMuscleData(calendar[todayKey()] || INITIAL_MUSCLE_DATA)
     })
   }, [userId])
 
   useEffect(() => {
     saveMuscleDay(userId, todayKey(), muscleData)
-    getMuscleCalendar(userId).then(calendar => {
-      setWeekDisplayData(computeWeeklyDisplay(calendar, muscleData))
-    })
   }, [muscleData, userId])
+
+  // ── Weekly heatmap from sets ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return
+    fetchWeeklySets(userId).then(sets => setWeekDisplayData(computeWeeklyDisplayFromSets(sets)))
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId) return
+    function refresh() {
+      fetchWeeklySets(userId).then(sets => setWeekDisplayData(computeWeeklyDisplayFromSets(sets)))
+    }
+    window.addEventListener('workoutHistoryUpdated', refresh)
+    return () => window.removeEventListener('workoutHistoryUpdated', refresh)
+  }, [userId])
 
   // ── Workout mode ───────────────────────────────────────────────────────────
   const [workoutModeData, setWorkoutModeData] = useState(null)

@@ -224,6 +224,7 @@ export function useWorkoutSession(userId, planId, exercises, dayLabel) {
     const duration = Math.floor((Date.now() - startTime.current) / 1000)
     await endSession(sessionId, { durationSeconds: duration, rating, notes })
     setIsEnded(true)
+    window.dispatchEvent(new Event('workoutHistoryUpdated'))
   }, [sessionId])
 
   const totalSets = Object.values(loggedSets).reduce((sum, sets) => sum + sets.length, 0)

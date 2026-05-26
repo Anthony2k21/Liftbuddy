@@ -73,6 +73,35 @@ export async function getTodaySession(userId, dayLabel) {
   return data
 }
 
+export async function fetchWeeklySets(userId) {
+  if (!userId) return []
+  const today = new Date()
+  const dow = today.getDay()
+  const daysFromMon = dow === 0 ? 6 : dow - 1
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - daysFromMon)
+  monday.setHours(0, 0, 0, 0)
+
+  const { data: sessions, error: sessErr } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('user_id', userId)
+    .gte('started_at', monday.toISOString())
+
+  if (sessErr || !sessions?.length) return []
+
+  const sessionIds = sessions.map(s => s.id)
+
+  const { data, error } = await supabase
+    .from('sets')
+    .select('exercise_name, weight, reps')
+    .in('session_id', sessionIds)
+    .neq('is_warmup', true)
+
+  if (error) { console.error('fetchWeeklySets', error); return [] }
+  return data || []
+}
+
 export async function getSessionSets(sessionId) {
   const { data, error } = await supabase
     .from('sets')
