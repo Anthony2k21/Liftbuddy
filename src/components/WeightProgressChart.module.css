@@ -35,6 +35,49 @@
   padding: 12px 8px 8px 4px;
 }
 
+/* Day type tabs */
+.dayTypeTabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.dayTypeTab {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.65rem;
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.dayTypeTab:hover {
+  color: rgba(255,255,255,0.7);
+  border-color: rgba(255,255,255,0.25);
+}
+.dayTypeTabActive {
+  background: rgba(255,255,255,0.04);
+}
+
+.dayTypeCount {
+  font-size: 0.58rem;
+  opacity: 0.6;
+}
+
+.emptyDayType {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+}
+
 .exSelect {
   background: rgba(0,0,0,0.6);
   border: 1px solid rgba(255,255,255,0.1);

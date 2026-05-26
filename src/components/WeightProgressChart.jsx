@@ -11,6 +11,29 @@ const LINE_COLORS = [
   '#ffd166', '#ff9f40', '#ff6b6b', '#43e97b',
 ]
 
+const DAY_TYPES = [
+  { key: 'all',  label: 'ALL'  },
+  { key: 'push', label: 'PUSH' },
+  { key: 'pull', label: 'PULL' },
+  { key: 'legs', label: 'LEGS' },
+]
+
+const DAY_TYPE_COLORS = {
+  push: '#ff3d71',
+  pull: '#a56bff',
+  legs: '#39ff14',
+  all:  '#00e5ff',
+}
+
+function inferDayType(name) {
+  if (!name) return 'other'
+  const n = name.toLowerCase()
+  if (/squat|leg press|lunge|hack squat|leg extension|hamstring|rdl|romanian|leg curl|glute|hip thrust|calf/.test(n)) return 'legs'
+  if (/deadlift|row|lat pull|pull.?up|chin.?up|curl|face pull|pull.?apart|back/.test(n)) return 'pull'
+  if (/bench|chest fly|pec deck|push.?up|overhead press|military press|arnold|lateral raise|front raise|shoulder press|dip|tricep|pushdown|skull crusher|incline|decline|fly/.test(n)) return 'push'
+  return 'other'
+}
+
 // Build { exerciseName: [{date, weight}] } from progress history
 function buildExerciseData(history, filterExercises, maxSessions) {
   const map = {}
@@ -101,6 +124,7 @@ function CustomTooltip({ active, payload, label, exerciseData }) {
 export function WeightProgressChart({ userId, compact = false, filterExercises = null }) {
   const [history, setHistory] = useState([])
   const [selectedEx, setSelectedEx] = useState('all')
+  const [selectedDayType, setSelectedDayType] = useState('all')
 
   const refresh = useCallback(() => {
     if (!userId) return
@@ -122,10 +146,28 @@ export function WeightProgressChart({ userId, compact = false, filterExercises =
 
   const exerciseNames = Object.keys(exerciseData)
 
+  // Filter exercise names by selected day type
+  const filteredByDayType = useMemo(() => {
+    if (selectedDayType === 'all') return exerciseData
+    const result = {}
+    for (const name of exerciseNames) {
+      if (inferDayType(name) === selectedDayType) result[name] = exerciseData[name]
+    }
+    return result
+  }, [exerciseData, exerciseNames, selectedDayType])
+
+  const dayTypeExNames = Object.keys(filteredByDayType)
+
+  // Reset exercise filter when day type changes
+  const handleDayTypeChange = (key) => {
+    setSelectedDayType(key)
+    setSelectedEx('all')
+  }
+
   const filteredData = useMemo(() => {
-    if (selectedEx === 'all') return exerciseData
-    return exerciseData[selectedEx] ? { [selectedEx]: exerciseData[selectedEx] } : {}
-  }, [exerciseData, selectedEx])
+    if (selectedEx === 'all') return filteredByDayType
+    return filteredByDayType[selectedEx] ? { [selectedEx]: filteredByDayType[selectedEx] } : {}
+  }, [filteredByDayType, selectedEx])
 
   const chartData = useMemo(() => buildChartData(filteredData), [filteredData])
   const displayNames = Object.keys(filteredData)
@@ -159,70 +201,101 @@ export function WeightProgressChart({ userId, compact = false, filterExercises =
 
       {open && (
         <div className={styles.chartWrap}>
-          {!compact && exerciseNames.length > 1 && (
+          {/* Day type tabs */}
+          {!compact && (
+            <div className={styles.dayTypeTabs}>
+              {DAY_TYPES.map(dt => {
+                const count = dt.key === 'all'
+                  ? exerciseNames.length
+                  : exerciseNames.filter(n => inferDayType(n) === dt.key).length
+                if (dt.key !== 'all' && count === 0) return null
+                const isActive = selectedDayType === dt.key
+                return (
+                  <button
+                    key={dt.key}
+                    className={`${styles.dayTypeTab} ${isActive ? styles.dayTypeTabActive : ''}`}
+                    style={isActive ? { borderColor: DAY_TYPE_COLORS[dt.key], color: DAY_TYPE_COLORS[dt.key] } : {}}
+                    onClick={() => handleDayTypeChange(dt.key)}
+                  >
+                    {dt.label}
+                    <span className={styles.dayTypeCount}>{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Exercise dropdown — scoped to selected day type */}
+          {!compact && dayTypeExNames.length > 1 && (
             <select
               className={styles.exSelect}
               value={selectedEx}
               onChange={e => setSelectedEx(e.target.value)}
             >
-              <option value="all">All exercises</option>
-              {exerciseNames.map(n => <option key={n} value={n}>{n}</option>)}
+              <option value="all">All {selectedDayType !== 'all' ? selectedDayType + ' ' : ''}exercises</option>
+              {dayTypeExNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           )}
 
-          <ResponsiveContainer width="100%" height={height}>
-            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis
-                dataKey="date"
-                tickFormatter={formatDate}
-                tick={{ fill: '#ffffff', fontSize: 11 }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.15)' }}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: '#ffffff', fontSize: 11 }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.15)' }}
-                tickLine={false}
-                unit="kg"
-                width={45}
-              />
-              <Tooltip content={<CustomTooltip exerciseData={filteredData} />} />
-              <Legend
-                wrapperStyle={{ color: '#ffffff', fontSize: 12, paddingTop: 8 }}
-              />
-              {displayNames.map((name, i) => {
-                const peak = findPeak(filteredData, name)
-                const color = LINE_COLORS[i % LINE_COLORS.length]
-                return (
-                  <Line
-                    key={name}
-                    type="monotone"
-                    dataKey={name}
-                    stroke={color}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: color, strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: color }}
-                    connectNulls
-                    isAnimationActive
-                    animationDuration={800}
-                  >
-                    {peak && (
-                      <ReferenceDot
-                        x={peak.date}
-                        y={peak.weight}
-                        r={6}
-                        fill={color}
-                        stroke="#ffffff"
-                        strokeWidth={1.5}
-                        label={{ value: '★', position: 'top', fill: color, fontSize: 12 }}
-                      />
-                    )}
-                  </Line>
-                )
-              })}
-            </LineChart>
-          </ResponsiveContainer>
+          {dayTypeExNames.length === 0 ? (
+            <div className={styles.emptyDayType}>
+              No {selectedDayType} exercises logged yet
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={height}>
+              <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatDate}
+                  tick={{ fill: '#ffffff', fontSize: 11 }}
+                  axisLine={{ stroke: 'rgba(255,255,255,0.15)' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: '#ffffff', fontSize: 11 }}
+                  axisLine={{ stroke: 'rgba(255,255,255,0.15)' }}
+                  tickLine={false}
+                  unit="kg"
+                  width={45}
+                />
+                <Tooltip content={<CustomTooltip exerciseData={filteredData} />} />
+                <Legend
+                  wrapperStyle={{ color: '#ffffff', fontSize: 12, paddingTop: 8 }}
+                />
+                {displayNames.map((name, i) => {
+                  const peak = findPeak(filteredData, name)
+                  const color = LINE_COLORS[i % LINE_COLORS.length]
+                  return (
+                    <Line
+                      key={name}
+                      type="monotone"
+                      dataKey={name}
+                      stroke={color}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: color, strokeWidth: 0 }}
+                      activeDot={{ r: 5, fill: color }}
+                      connectNulls
+                      isAnimationActive
+                      animationDuration={800}
+                    >
+                      {peak && (
+                        <ReferenceDot
+                          x={peak.date}
+                          y={peak.weight}
+                          r={6}
+                          fill={color}
+                          stroke="#ffffff"
+                          strokeWidth={1.5}
+                          label={{ value: '★', position: 'top', fill: color, fontSize: 12 }}
+                        />
+                      )}
+                    </Line>
+                  )
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       )}
     </div>

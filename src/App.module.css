@@ -322,16 +322,16 @@
 }
 
 .weekDayCircle {
-  width: 34px;
-  height: 34px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 1.5px solid transparent;
+  border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem;
-  letter-spacing: 0.03em;
+  font-size: 0.45rem;
+  letter-spacing: 0;
 }
 
 .weekDayLabel {
