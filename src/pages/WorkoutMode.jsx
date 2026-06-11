@@ -156,9 +156,8 @@ export function WorkoutMode({ userId, planId, exercises, dayLabel, onExit }) {
                   loggedSets={loggedSets[ex.exercise]}
                   isDone={false}
                   onClick={() => {
-                    if (window.confirm(`Jump to ${ex.exercise}?`)) {
-                      setCurrentIndex(currentIndex + 1 + i)
-                    }
+                    setCurrentIndex(currentIndex + 1 + i)
+                    restTimer.skip()
                   }}
                 />
               ))}
@@ -179,9 +178,8 @@ export function WorkoutMode({ userId, planId, exercises, dayLabel, onExit }) {
                   loggedSets={loggedSets[ex.exercise]}
                   isDone
                   onClick={() => {
-                    if (window.confirm(`Go back to ${ex.exercise}?`)) {
-                      setCurrentIndex(i)
-                    }
+                    setCurrentIndex(i)
+                    restTimer.skip()
                   }}
                 />
               ))}

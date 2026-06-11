@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styles from './DailyTracker.module.css'
 import { WeightProgressChart } from './WeightProgressChart'
 import { getDailyTrackerDate, saveDailyTrackerDate, getMuscleCalendar, getWorkoutPlans, getSelectedPlanId, getWorkoutHistory, saveWeekAssignment } from '../lib/db'
@@ -62,13 +62,13 @@ function calcStreak(calendar) {
   const d = new Date(TODAY + 'T00:00:00')
   // If today has no activity yet, start checking from yesterday
   const todayData = calendar[TODAY]
-  const todayActive = todayData && Object.values(todayData).some(v => v !== 'rest')
+  const todayActive = todayData && Object.values(todayData).some(v => v !== 'low')
   if (!todayActive) d.setDate(d.getDate() - 1)
 
   while (true) {
     const key = d.toISOString().slice(0, 10)
     const day = calendar[key]
-    if (!day || !Object.values(day).some(v => v !== 'rest')) break
+    if (!day || !Object.values(day).some(v => v !== 'low')) break
     streak++
     d.setDate(d.getDate() - 1)
   }
@@ -185,7 +185,7 @@ function getExerciseMuscle(exerciseName, fallback) {
 }
 
 function pctToLevel(pct) {
-  if (pct === 0)   return 'rest'
+  if (pct === 0)   return 'low'
   if (pct <= 33)   return 'low'
   if (pct <= 66)   return 'med'
   return 'high'
@@ -199,6 +199,9 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
   const [weekAssignment, setWeekAssignment]   = useState(null)
   const [showScheduleEditor, setShowScheduleEditor] = useState(false)
   const [draftAssignment, setDraftAssignment] = useState(null)
+  const [dragOver, setDragOver] = useState(null)
+  const dragFromRef = useRef(null)
+  const touchFromRef = useRef(null)
   const [tracker, setTracker]       = useState({})
   const [calendar, setCalendar]     = useState({})
   const [loggedDates, setLoggedDates] = useState(new Set())
@@ -440,7 +443,7 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
             const isSelected = dateStr === viewDate
             const isFutureDay = dateStr > TODAY
             const muscles = calendar[dateStr]
-            const trainedMuscles = muscles ? Object.entries(muscles).filter(([, v]) => v !== 'rest') : []
+            const trainedMuscles = muscles ? Object.entries(muscles).filter(([, v]) => v !== 'low') : []
             const planBlock = getPlanDayForDate(dateStr, activePlan, weekAssignment)
             const hasWeights = loggedDates.has(dateStr)
             return (
@@ -625,28 +628,86 @@ export function DailyTracker({ userId, onMuscleUpdate, onSessionUpdate }) {
             <div className={styles.scheduleHandle} />
             <div className={styles.scheduleHeader}>
               <span className={styles.scheduleTitle}>Edit Weekly Schedule</span>
-              <span className={styles.scheduleSubtitle}>{activePlan.name}</span>
+              <span className={styles.scheduleSubtitle}>Drag to swap · Tap pill to change</span>
             </div>
             <div className={styles.scheduleRows}>
-              {DAYS_OF_WEEK.map((dayName, i) => (
-                <div key={i} className={styles.scheduleRow}>
-                  <span className={styles.scheduleDayName}>{dayName}</span>
-                  <select
-                    className={styles.scheduleSelect}
-                    style={{ borderColor: draftAssignment?.[i] != null ? activePlan.color + '88' : undefined }}
-                    value={draftAssignment?.[i] ?? ''}
-                    onChange={e => setDraftAssignment(prev => ({
-                      ...prev,
-                      [i]: e.target.value === '' ? null : Number(e.target.value),
-                    }))}
+              {DAYS_OF_WEEK.map((dayName, i) => {
+                const blockIdx = draftAssignment?.[i]
+                const block = blockIdx != null ? activePlan.schedule[blockIdx] : null
+                const isOver = dragOver === i
+
+                function cyclePill() {
+                  const total = activePlan.schedule.length
+                  const next = blockIdx == null ? 0 : blockIdx + 1 >= total ? null : blockIdx + 1
+                  setDraftAssignment(prev => ({ ...prev, [i]: next }))
+                }
+
+                function onDragStart(e) {
+                  dragFromRef.current = i
+                  e.dataTransfer.effectAllowed = 'move'
+                }
+                function onDragOver(e) { e.preventDefault(); setDragOver(i) }
+                function onDrop() {
+                  const from = dragFromRef.current
+                  if (from == null || from === i) { setDragOver(null); return }
+                  setDraftAssignment(prev => {
+                    const n = { ...prev }
+                    const tmp = n[from]; n[from] = n[i]; n[i] = tmp
+                    return n
+                  })
+                  dragFromRef.current = null
+                  setDragOver(null)
+                }
+                function onDragEnd() { dragFromRef.current = null; setDragOver(null) }
+
+                function onTouchStart() { touchFromRef.current = i }
+                function onTouchMove(e) {
+                  e.preventDefault()
+                  const t = e.touches[0]
+                  const el = document.elementFromPoint(t.clientX, t.clientY)
+                  const row = el?.closest('[data-dayidx]')
+                  if (row) setDragOver(Number(row.dataset.dayidx))
+                }
+                function onTouchEnd() {
+                  const from = touchFromRef.current
+                  const to = dragOver
+                  if (from != null && to != null && from !== to) {
+                    setDraftAssignment(prev => {
+                      const n = { ...prev }
+                      const tmp = n[from]; n[from] = n[to]; n[to] = tmp
+                      return n
+                    })
+                  }
+                  touchFromRef.current = null
+                  setDragOver(null)
+                }
+
+                return (
+                  <div
+                    key={i}
+                    data-dayidx={i}
+                    className={`${styles.scheduleRow} ${isOver ? styles.scheduleRowDragOver : ''}`}
+                    draggable
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDrop={onDrop}
+                    onDragEnd={onDragEnd}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
                   >
-                    <option value="">Rest</option>
-                    {activePlan.schedule.map((block, idx) => (
-                      <option key={idx} value={idx}>{block.day}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
+                    <span className={styles.scheduleDragHandle}>⠿</span>
+                    <span className={styles.scheduleDayName}>{dayName.slice(0, 3).toUpperCase()}</span>
+                    <button
+                      className={styles.scheduleAssignedPill}
+                      style={block ? { borderColor: activePlan.color + '99', color: activePlan.color } : {}}
+                      onClick={cyclePill}
+                    >
+                      {block ? block.day.toUpperCase() : 'REST'}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
             <button
               className={styles.scheduleSaveBtn}

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import styles from './WorkoutLog.module.css'
-import { getWorkoutPlans, createWorkoutPlan, updateWorkoutPlan, deleteWorkoutPlan, getSelectedPlanId, saveSelectedPlanId } from '../lib/db'
+import { getWorkoutPlans, createWorkoutPlan, updateWorkoutPlan, deleteWorkoutPlan, getSelectedPlanId, saveSelectedPlanId, saveWeekAssignment } from '../lib/db'
 import { useWorkoutHistory } from '../hooks/useWorkoutHistory'
 
 const ACCENT_COLORS = [
@@ -182,6 +182,38 @@ export function WorkoutLog({ userId }) {
   }, [activePlan, loggedDates])
 
   const trainingDaysThisWeek = weekGrid.filter(d => d.block !== null).length
+
+  // Drag-to-swap on the week grid
+  const dragDowRef = useRef(null)
+  const [dragOverDow, setDragOverDow] = useState(null)
+  const [pendingSwap, setPendingSwap] = useState(null) // { from, to }
+
+  function buildDefaultAssignment(plan) {
+    const days = FREQ_MAP[plan.daysPerWeek] || []
+    const wa = {}
+    for (let d = 0; d < 7; d++) {
+      const i = days.indexOf(d)
+      wa[d] = i !== -1 ? i % plan.schedule.length : null
+    }
+    return wa
+  }
+
+  function requestSwap(fromDow, toDow) {
+    if (!activePlan || fromDow == null || toDow == null || fromDow === toDow) return
+    setPendingSwap({ from: fromDow, to: toDow })
+  }
+
+  function confirmSwap() {
+    if (!pendingSwap || !activePlan) return
+    const { from, to } = pendingSwap
+    const wa = activePlan.weekAssignment ?? buildDefaultAssignment(activePlan)
+    const next = { ...wa }
+    const tmp = next[from]; next[from] = next[to]; next[to] = tmp
+    setPlans(prev => prev.map(p => p.id === activePlan.id ? { ...p, weekAssignment: next } : p))
+    saveWeekAssignment(userId, activePlan.id, next)
+    window.dispatchEvent(new Event('storage'))
+    setPendingSwap(null)
+  }
   const doneThisWeek = weekGrid.filter(d => d.isDone && d.block !== null).length
   const weekPct = trainingDaysThisWeek > 0 ? Math.round(doneThisWeek / trainingDaysThisWeek * 100) : 0
 
@@ -324,17 +356,39 @@ export function WorkoutLog({ userId }) {
                   <span className={styles.scheduleWeek}>{today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toUpperCase()}</span>
                 </div>
                 <div className={styles.scheduleGrid}>
-                  {weekGrid.map(({ dow, block, isToday, isDone }) => (
-                    <div
-                      key={dow}
-                      className={`${styles.day} ${isToday ? styles.dayToday : isDone ? styles.dayDone : ''}`}
-                    >
-                      <div className={styles.dayLabel}>{dow}</div>
-                      <div className={`${styles.dayName} ${!block ? styles.dayRest : ''}`}>
-                        {block ? block.day.toUpperCase().slice(0, 4) : 'REST'}
+                  {weekGrid.map(({ dow, block, isToday, isDone }, i) => {
+                    const isOver = dragOverDow === i
+                    return (
+                      <div
+                        key={dow}
+                        className={`${styles.day} ${isToday ? styles.dayToday : isDone ? styles.dayDone : ''} ${isOver ? styles.dayDragOver : ''}`}
+                        draggable
+                        onDragStart={e => { dragDowRef.current = i; e.dataTransfer.effectAllowed = 'move' }}
+                        onDragOver={e => { e.preventDefault(); setDragOverDow(i) }}
+                        onDrop={() => { requestSwap(dragDowRef.current, i); dragDowRef.current = null; setDragOverDow(null) }}
+                        onDragEnd={() => { dragDowRef.current = null; setDragOverDow(null) }}
+                        onTouchStart={() => { dragDowRef.current = i }}
+                        onTouchMove={e => {
+                          e.preventDefault()
+                          const t = e.touches[0]
+                          const el = document.elementFromPoint(t.clientX, t.clientY)
+                          const cell = el?.closest('[data-gridcell]')
+                          if (cell) setDragOverDow(Number(cell.dataset.gridcell))
+                        }}
+                        onTouchEnd={() => {
+                          requestSwap(dragDowRef.current, dragOverDow)
+                          dragDowRef.current = null; setDragOverDow(null)
+                        }}
+                        data-gridcell={i}
+                        style={{ touchAction: 'none', cursor: 'grab' }}
+                      >
+                        <div className={styles.dayLabel}>{dow}</div>
+                        <div className={`${styles.dayName} ${!block ? styles.dayRest : ''}`}>
+                          {block ? block.day.toUpperCase().slice(0, 4) : 'REST'}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
@@ -488,6 +542,32 @@ export function WorkoutLog({ userId }) {
           </div>
         </div>
       )}
+
+      {/* ── SWAP CONFIRMATION ── */}
+      {pendingSwap && activePlan && (() => {
+        const wa = activePlan.weekAssignment ?? buildDefaultAssignment(activePlan)
+        const fromBlock = wa[pendingSwap.from] != null ? activePlan.schedule[wa[pendingSwap.from]] : null
+        const toBlock   = wa[pendingSwap.to]   != null ? activePlan.schedule[wa[pendingSwap.to]]   : null
+        const fromDay = DOW_LABELS[pendingSwap.from]
+        const toDay   = DOW_LABELS[pendingSwap.to]
+        return (
+          <div className={styles.modalBackdrop} onClick={() => setPendingSwap(null)}>
+            <div className={styles.modalBox} onClick={e => e.stopPropagation()}>
+              <h3 className={styles.modalTitle}>CONFIRM SWAP</h3>
+              <p className={styles.swapDesc}>
+                <span className={styles.swapPill}>{fromDay} · {fromBlock ? fromBlock.day.toUpperCase() : 'REST'}</span>
+                <span className={styles.swapArrow}>⇄</span>
+                <span className={styles.swapPill}>{toDay} · {toBlock ? toBlock.day.toUpperCase() : 'REST'}</span>
+              </p>
+              <p className={styles.swapNote}>This will update your schedule in the database.</p>
+              <div className={styles.modalBtns}>
+                <button className={styles.btnSave} onClick={confirmSwap}>Confirm</button>
+                <button className={styles.btnCancel} onClick={() => setPendingSwap(null)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
