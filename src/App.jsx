@@ -496,10 +496,6 @@ function AppInner({ userName, userEmail, userId, signOut }) {
       {/* ── HEADER ── */}
       <header className={styles.header}>
         <div className={styles.titleGroup}>
-          <div className={styles.wipSign}>
-            <span className={styles.wipIcon}>⚠</span>
-            <h1 className={styles.title}>Work In Progress</h1>
-          </div>
           <span className={styles.welcomeText}>Welcome back, {displayName}</span>
         </div>
         <div className={styles.headerRight}>

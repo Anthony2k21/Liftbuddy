@@ -23,32 +23,6 @@
   gap: 1px;
 }
 
-.wipSign {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(255, 190, 0, 0.08);
-  border: 1px solid rgba(255, 190, 0, 0.4);
-  border-radius: 5px;
-  padding: 3px 8px 3px 6px;
-  width: fit-content;
-  white-space: nowrap;
-}
-
-.wipIcon {
-  font-size: 0.65rem;
-  line-height: 1;
-}
-
-.title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.95rem;
-  letter-spacing: 0.18em;
-  color: #ffbe00;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
 .welcomeText {
   font-size: 0.62rem;
   color: var(--muted);
