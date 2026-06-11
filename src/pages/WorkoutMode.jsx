@@ -143,49 +143,52 @@ export function WorkoutMode({ userId, planId, exercises, dayLabel, onExit }) {
           isLast={currentIndex === exercises.length - 1}
         />
 
-        {/* Up next */}
-        {currentIndex < exercises.length - 1 && (
-          <div className={styles.section}>
-            <div className={styles.sectionLabel}>UP NEXT</div>
-            <div className={styles.previewList}>
-              {exercises.slice(currentIndex + 1).map((ex, i) => (
-                <PreviewCard
-                  key={ex.exercise + i}
-                  exercise={ex}
-                  index={currentIndex + 1 + i}
-                  loggedSets={loggedSets[ex.exercise]}
-                  isDone={false}
-                  onClick={() => {
-                    setCurrentIndex(currentIndex + 1 + i)
-                    restTimer.skip()
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Other exercises — "done" means a set was actually logged, not just
+            that we scrolled past it. Anything not current and not logged is pending. */}
+        {(() => {
+          const others = exercises
+            .map((ex, idx) => ({ ex, idx }))
+            .filter(({ idx }) => idx !== currentIndex)
+            .map(({ ex, idx }) => ({
+              ex,
+              idx,
+              done: (loggedSets[ex.exercise] || []).some(s => s.done),
+            }))
 
-        {/* Done */}
-        {currentIndex > 0 && (
-          <div className={styles.section}>
-            <div className={styles.sectionLabel}>DONE</div>
-            <div className={styles.previewList}>
-              {exercises.slice(0, currentIndex).map((ex, i) => (
-                <PreviewCard
-                  key={ex.exercise + i}
-                  exercise={ex}
-                  index={i}
-                  loggedSets={loggedSets[ex.exercise]}
-                  isDone
-                  onClick={() => {
-                    setCurrentIndex(i)
-                    restTimer.skip()
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+          const pending = others.filter(o => !o.done)
+          const done = others.filter(o => o.done)
+
+          const renderCard = ({ ex, idx, done }) => (
+            <PreviewCard
+              key={ex.exercise + idx}
+              exercise={ex}
+              index={idx}
+              loggedSets={loggedSets[ex.exercise]}
+              isDone={done}
+              onClick={() => {
+                setCurrentIndex(idx)
+                restTimer.skip()
+              }}
+            />
+          )
+
+          return (
+            <>
+              {pending.length > 0 && (
+                <div className={styles.section}>
+                  <div className={styles.sectionLabel}>UP NEXT</div>
+                  <div className={styles.previewList}>{pending.map(renderCard)}</div>
+                </div>
+              )}
+              {done.length > 0 && (
+                <div className={styles.section}>
+                  <div className={styles.sectionLabel}>DONE</div>
+                  <div className={styles.previewList}>{done.map(renderCard)}</div>
+                </div>
+              )}
+            </>
+          )
+        })()}
 
         <div style={{ height: 120 }} />
       </div>
