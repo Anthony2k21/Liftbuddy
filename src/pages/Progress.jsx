@@ -40,11 +40,10 @@ function applyAutoRatings(history) {
 
 function inferTodayDayType(history) {
   const today = new Date().toISOString().slice(0, 10)
-  const groups = new Set(history.filter(h => h.date === today).map(h => h.muscleGroup))
-  if (groups.has('chest') || groups.has('shoulders')) return 'push'
-  if (groups.has('back')) return 'pull'
-  if (groups.has('legs')) return 'legs'
-  return 'push'
+  const groups = history.filter(h => h.date === today).map(h => h.muscleGroup)
+  // Default the Progress chart to a muscle group trained today, else chest.
+  const valid = ['chest', 'back', 'shoulders', 'arms', 'abs', 'legs']
+  return groups.find(g => valid.includes(g)) || 'chest'
 }
 
 export function Progress({ userId }) {

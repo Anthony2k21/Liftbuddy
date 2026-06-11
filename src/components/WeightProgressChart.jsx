@@ -5,32 +5,18 @@ import {
   CartesianGrid, Tooltip, Legend, ReferenceDot,
 } from 'recharts'
 import styles from './WeightProgressChart.module.css'
+import { MUSCLE_GROUPS, getMuscleGroup } from '../lib/muscles'
 
 const LINE_COLORS = [
   '#00e5ff', '#a56bff', '#39ff14', '#ff3d71',
   '#ffd166', '#ff9f40', '#ff6b6b', '#43e97b',
 ]
 
-const DAY_TYPES = [
-  { key: 'push', label: 'PUSH' },
-  { key: 'pull', label: 'PULL' },
-  { key: 'legs', label: 'LEGS' },
-]
-
-const DAY_TYPE_COLORS = {
-  push: '#ff3d71',
-  pull: '#a56bff',
-  legs: '#39ff14',
-  all:  '#00e5ff',
-}
+const DAY_TYPES = MUSCLE_GROUPS
+const DAY_TYPE_COLORS = Object.fromEntries(MUSCLE_GROUPS.map(g => [g.key, g.color]))
 
 function inferDayType(name) {
-  if (!name) return 'other'
-  const n = name.toLowerCase()
-  if (/squat|leg press|lunge|hack squat|leg extension|hamstring|rdl|romanian|leg curl|glute|hip thrust|calf/.test(n)) return 'legs'
-  if (/deadlift|row|lat pull|pull.?up|chin.?up|curl|face pull|pull.?apart|back/.test(n)) return 'pull'
-  if (/bench|chest fly|pec deck|push.?up|overhead press|military press|arnold|lateral raise|front raise|shoulder press|dip|tricep|pushdown|skull crusher|incline|decline|fly/.test(n)) return 'push'
-  return 'other'
+  return getMuscleGroup(name) || 'other'
 }
 
 // Build { exerciseName: [{date, weight}] } from progress history
@@ -120,7 +106,7 @@ function CustomTooltip({ active, payload, label, exerciseData }) {
   )
 }
 
-export function WeightProgressChart({ userId, compact = false, filterExercises = null, defaultDayType = 'push' }) {
+export function WeightProgressChart({ userId, compact = false, filterExercises = null, defaultDayType = 'chest' }) {
   const [history, setHistory] = useState([])
   const [selectedEx, setSelectedEx] = useState('all')
   const [selectedDayType, setSelectedDayType] = useState(defaultDayType)
