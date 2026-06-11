@@ -396,6 +396,47 @@ function AppInner({ userName, userEmail, userId, signOut }) {
     ? `${todayPlanInfo.planName.toUpperCase()} · ${workoutExercises.length} EXERCISES · ~${workoutExercises.length * 10} MIN`
     : todayPlanInfo?.planName?.toUpperCase() || 'SET UP A PLAN IN PLANS TAB'
 
+  // Stats for today's day type (PUSH/PULL/LEG) — rotated through in the 3rd cell.
+  // Falls back to "days since last workout" when there's no day type / no matching history.
+  const dayStats = useMemo(() => {
+    const dayType = inferWorkoutType(workoutExercises) // e.g. 'PUSH DAY'
+    const short   = dayType ? dayType.replace(' DAY', '') : null // 'PUSH'
+    const fallback = [{ val: lastWorkoutDays !== null ? `${lastWorkoutDays}D` : '—', lbl: 'LAST WORKOUT' }]
+    if (!short) return fallback
+
+    // Past sessions whose logged sets classify as the same day type
+    const matching = history.filter(h => inferWorkoutType(
+      (h.sets || []).map(s => ({ exercise: s.exercise }))
+    ) === dayType)
+    if (matching.length === 0) return fallback
+
+    const sessionVolume = h =>
+      (h.sets || []).reduce((v, s) =>
+        v + (parseInt(s.sets) || 1) * (parseInt(s.reps) || 0) * (parseFloat(s.weight) || 0), 0)
+
+    const volumes = matching.map(sessionVolume)
+    const bestVol = Math.max(...volumes)
+    const lastVol = sessionVolume(matching[matching.length - 1])
+    const topSet  = Math.max(0, ...matching.flatMap(h => (h.sets || []).map(s => parseFloat(s.weight) || 0)))
+
+    return [
+      { val: fmtVolume(bestVol), lbl: `BEST ${short}` },
+      { val: fmtVolume(lastVol), lbl: `LAST ${short}` },
+      { val: String(matching.length), lbl: `${short} SESSIONS` },
+      { val: topSet > 0 ? `${topSet}KG` : '—', lbl: `TOP ${short}` },
+    ]
+  }, [workoutExercises, history, lastWorkoutDays])
+
+  // Rotate through dayStats every 10s
+  const [dayStatIdx, setDayStatIdx] = useState(0)
+  useEffect(() => {
+    setDayStatIdx(0)
+    if (dayStats.length <= 1) return
+    const id = setInterval(() => setDayStatIdx(i => (i + 1) % dayStats.length), 10000)
+    return () => clearInterval(id)
+  }, [dayStats])
+  const currentDayStat = dayStats[dayStatIdx % dayStats.length]
+
   useEffect(() => {
     if (!userId || isRestDay) { setHasTodaySession(false); return }
     const label = workoutTitle.endsWith(' DAY') ? workoutTitle : workoutTitle + ' DAY'
@@ -545,8 +586,8 @@ function AppInner({ userName, userEmail, userId, signOut }) {
             </div>
             <div className={styles.statDivider} />
             <div className={styles.statCell}>
-              <span className={styles.statVal}>{lastWorkoutDays !== null ? `${lastWorkoutDays}D` : '—'}</span>
-              <span className={styles.statLbl}><IconClock /> LAST PUSH</span>
+              <span key={currentDayStat.lbl} className={`${styles.statVal} ${styles.statSlide}`}>{currentDayStat.val}</span>
+              <span key={currentDayStat.lbl + '-l'} className={`${styles.statLbl} ${styles.statSlide}`}><IconClock /> {currentDayStat.lbl}</span>
             </div>
           </div>
         </div>
