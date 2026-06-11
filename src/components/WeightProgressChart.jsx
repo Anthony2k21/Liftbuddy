@@ -12,7 +12,6 @@ const LINE_COLORS = [
 ]
 
 const DAY_TYPES = [
-  { key: 'all',  label: 'ALL'  },
   { key: 'push', label: 'PUSH' },
   { key: 'pull', label: 'PULL' },
   { key: 'legs', label: 'LEGS' },
@@ -121,14 +120,14 @@ function CustomTooltip({ active, payload, label, exerciseData }) {
   )
 }
 
-export function WeightProgressChart({ userId, compact = false, filterExercises = null, defaultDayType = 'all' }) {
+export function WeightProgressChart({ userId, compact = false, filterExercises = null, defaultDayType = 'push' }) {
   const [history, setHistory] = useState([])
   const [selectedEx, setSelectedEx] = useState('all')
-  const [selectedDayType, setSelectedDayType] = useState('all')
+  const [selectedDayType, setSelectedDayType] = useState(defaultDayType)
   const userSelectedRef = useRef(false)
 
   useEffect(() => {
-    if (!userSelectedRef.current && defaultDayType && defaultDayType !== 'all') {
+    if (!userSelectedRef.current && defaultDayType) {
       setSelectedDayType(defaultDayType)
     }
   }, [defaultDayType])

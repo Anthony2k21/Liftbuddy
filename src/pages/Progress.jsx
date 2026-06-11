@@ -44,7 +44,7 @@ function inferTodayDayType(history) {
   if (groups.has('chest') || groups.has('shoulders')) return 'push'
   if (groups.has('back')) return 'pull'
   if (groups.has('legs')) return 'legs'
-  return 'all'
+  return 'push'
 }
 
 export function Progress({ userId }) {
