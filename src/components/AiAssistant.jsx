@@ -3,7 +3,7 @@ import styles from './AiAssistant.module.css'
 
 const API_URL = '/api/chat'
 
-const SYSTEM_PROMPT = `You are a personal fitness assistant built into a body tracker app called No1Assist.
+const SYSTEM_PROMPT = `You are a personal fitness assistant built into a fitness app called LiftBuddy.
 You help users with workout advice, muscle recovery, exercise form, programming, and nutrition.
 Keep responses concise and practical. You have access to the user's current session muscle data if provided.
 
